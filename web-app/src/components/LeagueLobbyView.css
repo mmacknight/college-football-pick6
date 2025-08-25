@@ -1,0 +1,550 @@
+/* Mobile-first responsive design */
+.lobby-container {
+  min-height: 100vh;
+  background-color: #f5f5f7;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header - matches StandingsView pattern */
+.lobby-header {
+  background: linear-gradient(135deg, #1a365d 0%, #2d5a8a 100%);
+  color: white;
+  padding: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+.app-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.settings-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.settings-button:active {
+  transform: scale(0.95);
+}
+
+/* Main content */
+.lobby-content {
+  flex: 1;
+  padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* League status header */
+.league-status-header {
+  margin-bottom: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.league-status-header .league-settings-button {
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  color: #64748b !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  min-height: 36px !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.league-status-header .league-settings-button:hover {
+  background: #007bff !important;
+  color: white !important;
+  border-color: #007bff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25) !important;
+}
+
+.league-status-header .league-settings-button:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 4px rgba(0, 123, 255, 0.2) !important;
+}
+
+.league-status-header .settings-icon {
+  font-size: 0.875rem;
+}
+
+.league-status-header .settings-text {
+  font-size: 0.875rem;
+}
+
+/* Consistent stacked layout across all screen sizes */
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.pre-draft {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.season-info {
+  color: #6c757d;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Lobby sections */
+.lobby-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.lobby-section h2 {
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* League Code Section */
+.league-code-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.league-code {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f9fa;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  flex: 1;
+  min-width: 250px;
+}
+
+.code-label {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.code-value {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  letter-spacing: 2px;
+}
+
+.copy-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 44px;
+}
+
+.copy-button:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.copy-button.success {
+  background: #28a745;
+}
+
+.invite-instructions {
+  color: #6c757d;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Players Section */
+.players-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.max-teams-info {
+  color: #6c757d;
+  font-size: 14px;
+  background: #f8f9fa;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.no-players {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.player-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.player-card:hover {
+  background: #f1f3f4;
+  border-color: #dee2e6;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-name {
+  font-weight: 700;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.creator-badge {
+  background: #007bff;
+  color: white;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.team-name {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.join-time {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+/* Draft Control Section */
+.draft-control {
+  border: 2px solid #28a745;
+  background: linear-gradient(135deg, #f8fff9, #ffffff);
+}
+
+.draft-info {
+  margin-bottom: 20px;
+}
+
+.draft-info p {
+  margin: 0 0 8px 0;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.draft-ready {
+  color: #28a745 !important;
+  font-weight: 600;
+}
+
+.start-draft-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 56px;
+}
+
+.start-draft-btn.ready {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.start-draft-btn.ready:hover {
+  background: linear-gradient(135deg, #218838, #1db584);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.start-draft-btn.disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Waiting Info Section */
+.waiting-info {
+  border: 2px solid #ffc107;
+  background: linear-gradient(135deg, #fffbf0, #ffffff);
+}
+
+.waiting-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: #fff8e1;
+  border-radius: 8px;
+  border: 1px solid #ffecb3;
+}
+
+.pulse-dot {
+  width: 12px;
+  height: 12px;
+  background: #ffc107;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loading and Error States */
+.lobby-loading,
+.lobby-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  min-height: 50vh;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e9ecef;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.lobby-error h2 {
+  color: #dc3545;
+  margin-bottom: 12px;
+}
+
+.lobby-error p {
+  color: #6c757d;
+  margin-bottom: 24px;
+}
+
+.btn.secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+  min-height: 44px;
+}
+
+.btn.secondary:hover {
+  background: #5a6268;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .lobby-content {
+    padding: 1rem 0.75rem;
+  }
+
+  .app-title {
+    font-size: 1.25rem;
+  }
+
+  .league-code-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .league-code {
+    min-width: auto;
+  }
+
+  .copy-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .player-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .players-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lobby-content {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .lobby-section {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+
+  .header-left {
+    gap: 0.75rem;
+  }
+
+  .app-title {
+    font-size: 1.1rem;
+  }
+}

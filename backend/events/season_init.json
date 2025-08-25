@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/season/init",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"season\": \"2024\"}",
+  "isBase64Encoded": false
+}

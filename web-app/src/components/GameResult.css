@@ -1,0 +1,333 @@
+/* Game Result Component Styles */
+.game-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+/* Compact mode for modals - less padding, simpler layout */
+.game-result.compact {
+  padding: 0.5rem 0;
+  background: transparent !important;
+  border-left: none !important;
+  box-shadow: none !important;
+  min-height: 3rem; /* Consistent height regardless of content */
+}
+
+.game-result.compact .game-basic-info {
+  gap: 0.5rem;
+  justify-content: flex-start;
+  margin-bottom: 0.25rem;
+}
+
+/* Ensure non-compact mode has proper alignment */
+.game-result:not(.compact) .game-basic-info {
+  justify-content: flex-start;
+}
+
+.game-result.compact .game-status-info {
+  margin-top: 0;
+  min-height: 1.5rem; /* Consistent bottom section height */
+}
+
+.game-result.compact .vs-text {
+  font-size: 0.9rem;
+  min-width: 20px;
+}
+
+.game-result.compact .opponent-name {
+  font-size: 0.9rem;
+}
+
+.game-basic-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+}
+
+/* Use subtle positive background for wins (similar to live yellow), keep losses plain */
+.game-result.win {
+  background: #f0fdf4;
+  border-left: 4px solid #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.1);
+}
+
+.game-result.loss {
+  background: #f8f9fa;
+  border-left: 4px solid #e9ecef;
+}
+
+.game-result.tie {
+  background: #f8f9fa;
+  border-left: 4px solid #ffc107;
+}
+
+.game-result.scheduled {
+  background: #ffffff;
+  border-left: 4px solid #dee2e6;
+}
+
+.game-result.no-game {
+  background: #ffffff;
+  border-left: 4px solid #e9ecef;
+  opacity: 0.7;
+}
+
+.game-result.live {
+  background: #fff8e1;
+  border-left: 4px solid #ff9800;
+  position: relative;
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.15);
+}
+
+/* Removed problematic overlay line that was covering the yellow live background */
+
+@keyframes liveGlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.team-dot {
+  font-size: 1.2rem;
+  min-width: 24px;
+  text-align: center;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  transition: all 0.2s ease;
+}
+
+
+
+.game-result .team-name {
+  font-weight: 700;
+  color: #212529;
+  min-width: 120px;
+}
+
+.vs-text {
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.opponent-name {
+  color: #495057;
+  font-weight: 500;
+}
+
+.game-status-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.home-away-indicator {
+  background: rgba(108, 117, 125, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.game-status {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* Score Bug */
+.score-bug {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #495057;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.score-bug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  width: 100%;
+}
+
+/* Removed game-time-info - now handled inline with live indicator */
+
+.score-bug.live {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid #ced4da;
+  animation: scoreGlow 3s ease-in-out infinite;
+}
+
+@keyframes scoreGlow {
+  0%, 100% { 
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  50% { 
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+  }
+}
+
+.score-teams {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-team {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-abbrev {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: center;
+  color: #495057;
+}
+
+.team-score {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #212529;
+  min-width: 20px;
+  text-align: center;
+}
+
+.score-divider {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.game-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.live-status {
+  background: #dc3545;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  animation: liveBlink 2s ease-in-out infinite;
+}
+
+.final-status {
+  background: rgba(108, 117, 125, 0.15);
+  color: #495057;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+@keyframes liveBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.quarter {
+  color: #6c757d;
+}
+
+.time {
+  color: #6c757d;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .game-result {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .game-result .team-name {
+    min-width: 100px;
+    font-size: 0.9rem;
+  }
+  
+  .game-basic-info {
+    gap: 0.5rem;
+  }
+  
+  .vs-text {
+    font-size: 0.8rem;
+  }
+  
+  .opponent-name {
+    font-size: 0.85rem;
+  }
+  
+
+  
+  /* Mobile score bug adjustments */
+  .score-bug {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .team-abbrev {
+    font-size: 0.7rem;
+    min-width: 28px;
+  }
+  
+  .team-score {
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .game-result {
+    padding: 1rem;
+  }
+  
+  .game-result .team-name {
+    min-width: 140px;
+  }
+  
+  .score-bug {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 1024px) {
+  .game-result:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .score-bug {
+    font-size: 1rem;
+  }
+}

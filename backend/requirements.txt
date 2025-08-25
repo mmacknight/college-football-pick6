@@ -1,0 +1,10 @@
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+pydantic==2.5.0
+pyjwt==2.8.0
+bcrypt==4.1.2
+requests==2.31.0
+python-dotenv==1.0.0
+flask==3.0.0
+flask-cors==4.0.0
+flask-socketio==5.3.6 

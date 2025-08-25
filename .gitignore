@@ -1,0 +1,43 @@
+# Environment files with secrets
+backend/local-env.json
+.env
+*.env
+.env.local
+.env.production
+
+# API Keys and secrets
+**/api-keys.json
+**/secrets.json
+
+# AWS credentials
+.aws/
+aws-exports.js
+
+# Dependencies
+node_modules/
+backend/venv/
+*/node_modules/
+
+# Build outputs
+web-app/dist/
+web-app/build/
+.aws-sam/
+backend/.aws-sam/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,571 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Pick6 College Football Fantasy Backend
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.11
+    Layers:
+      - !Ref SharedLayer
+    Environment:
+      Variables:
+        DATABASE_URL: postgresql://pick6admin:pick6password@localhost:5432/pick6db
+        JWT_SECRET: !Ref JWTSecret
+        CFB_API_KEY: !Ref CFBApiKey
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  DBUsername:
+    Type: String
+    Default: pick6admin
+    NoEcho: true
+  DBPassword:
+    Type: String
+    Default: pick6password
+    NoEcho: true
+  DatabaseName:
+    Type: String
+    Default: pick6db
+  JWTSecret:
+    Type: String
+    Default: your-jwt-secret-change-in-production
+    NoEcho: true
+  CFBApiKey:
+    Type: String
+    Default: your-cfb-api-key-here
+    NoEcho: true
+
+Resources:
+  # Shared Layer for common code
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: pick6-shared-layer
+      Description: Shared modules for Pick6 lambdas
+      ContentUri: layers/shared/
+      CompatibleRuntimes:
+        - python3.11
+    Metadata:
+      BuildMethod: python3.11
+
+  # API Gateway
+  Pick6Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  # Auth Functions
+  AuthLoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/auth/
+      Handler: login.lambda_handler
+      Events:
+        LoginApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /auth/login
+            Method: POST
+
+  AuthSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/auth/
+      Handler: signup.lambda_handler
+      Events:
+        SignupApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /auth/signup
+            Method: POST
+
+  AuthUpdateProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/auth/
+      Handler: update_profile.lambda_handler
+      Events:
+        UpdateProfileApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /auth/profile
+            Method: PUT
+
+  # League Functions
+  LeagueCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: create.lambda_handler
+      Events:
+        CreateApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues
+            Method: POST
+
+  LeagueJoinFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: join.lambda_handler
+      Events:
+        JoinApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/join
+            Method: POST
+
+  LeagueListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: list.lambda_handler
+      Events:
+        ListApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues
+            Method: GET
+
+  # League My Teams Function
+  LeagueMyTeamsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: my_teams.lambda_handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/my-teams
+            Method: GET
+
+  # League Draft Board Function
+  LeagueDraftBoardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: draft_board.lambda_handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/draft-board
+            Method: GET
+
+  # League Draft Status Function
+  LeagueDraftStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: draft_status.lambda_handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/draft-status
+            Method: GET
+
+  # League Start Draft Function
+  LeagueStartDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: start_draft.lambda_handler
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/start-draft
+            Method: POST
+
+  # League Admin Functions
+  LeagueGetSettingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: get_settings.lambda_handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/settings
+            Method: GET
+
+  LeagueUpdateSettingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: update_settings.lambda_handler
+      Events:
+        PutApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/settings
+            Method: PUT
+
+  LeagueRemovePlayerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: remove_player.lambda_handler
+      Events:
+        DeleteApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/players/{userId}
+            Method: DELETE
+
+  LeagueResetDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: reset_draft.lambda_handler
+      Events:
+        PostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/reset-draft
+            Method: POST
+
+  LeagueUpdatePlayerTeamsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: update_player_teams.lambda_handler
+      Events:
+        PutApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/players/{userId}/teams
+            Method: PUT
+
+  LeagueUpdateTeamNameFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: update_team_name.lambda_handler
+      Events:
+        PutApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/team-name
+            Method: PUT
+
+  LeagueLobbyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: lobby.lambda_handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{id}/lobby
+            Method: GET
+
+  # WebSocket Functions
+  WebSocketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/websocket/
+      Handler: handler.lambda_handler
+      Environment:
+        Variables:
+          CONNECTIONS_TABLE: !Ref WebSocketConnectionsTable
+          API_GATEWAY_WEBSOCKET_ID: !Ref WebSocketApi
+          AWS_REGION: !Ref AWS::Region
+          STAGE: !Ref Stage
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WebSocketConnectionsTable
+        - Statement:
+          - Effect: Allow
+            Action:
+              - execute-api:ManageConnections
+            Resource: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/${Stage}/*/*"
+      Events:
+        ConnectRoute:
+          Type: WebSocket
+          Properties:
+            ApiId: !Ref WebSocketApi
+            Route: $connect
+        DisconnectRoute:
+          Type: WebSocket
+          Properties:
+            ApiId: !Ref WebSocketApi
+            Route: $disconnect
+        MessageRoute:
+          Type: WebSocket
+          Properties:
+            ApiId: !Ref WebSocketApi
+            Route: message
+        PingRoute:
+          Type: WebSocket
+          Properties:
+            ApiId: !Ref WebSocketApi
+            Route: ping
+
+  # WebSocket API Gateway
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${Stage}-pick6-websocket"
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  WebSocketDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+      - MessageRoute
+      - PingRoute
+    Properties:
+      ApiId: !Ref WebSocketApi
+
+  WebSocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: !Ref Stage
+      Description: !Sub "${Stage} stage"
+      DeploymentId: !Ref WebSocketDeployment
+      ApiId: !Ref WebSocketApi
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      AuthorizationType: NONE
+      OperationName: ConnectRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ConnectInteg
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      OperationName: DisconnectRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref DisconnectInteg
+
+  MessageRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: message
+      AuthorizationType: NONE
+      OperationName: MessageRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref MessageInteg
+
+  PingRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: ping
+      AuthorizationType: NONE
+      OperationName: PingRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref PingInteg
+
+  ConnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Connect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations"
+
+  DisconnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Disconnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations"
+
+  MessageInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Message Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations"
+
+  PingInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Ping Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations"
+
+  WebSocketConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketFunction
+      Principal: apigateway.amazonaws.com
+
+  WebSocketDisconnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketFunction
+      Principal: apigateway.amazonaws.com
+
+  WebSocketMessagePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketFunction
+      Principal: apigateway.amazonaws.com
+
+  WebSocketPingPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketFunction
+      Principal: apigateway.amazonaws.com
+
+  # Standings Functions
+  StandingsGetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/standings/
+      Handler: get.lambda_handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{league_id}/standings
+            Method: GET
+
+  # League Games Functions  
+  LeagueGamesWeekFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leagues/
+      Handler: games_week.lambda_handler
+      Events:
+        GamesWeekApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /leagues/{league_id}/games/week/{week}
+            Method: GET
+
+  # Schools Functions
+  SchoolsListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/schools/
+      Handler: list.lambda_handler
+      Events:
+        ListApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /schools
+            Method: GET
+
+  # Teams Functions
+  TeamsSelectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/teams/
+      Handler: team_select.lambda_handler
+      Events:
+        SelectApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /teams/select
+            Method: POST
+
+  # Admin Functions
+  AdminSeasonInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/admin/
+      Handler: season_init.lambda_handler
+      Timeout: 120  # Longer timeout for API calls
+      Events:
+        InitApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Pick6Api
+            Path: /admin/season/init
+            Method: POST
+
+  # WebSocket Connections Table
+  WebSocketConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${Stage}-websocket-connections"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: connection_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: connection_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+Outputs:
+  Pick6Api:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${Pick6Api}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/"
+  
+  WebSocketUrl:
+    Description: WebSocket API Gateway endpoint URL
+    Value: !Sub "wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}" 

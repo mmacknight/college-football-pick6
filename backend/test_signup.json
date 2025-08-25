@@ -1,0 +1,7 @@
+{
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"email\": \"direct@test.com\", \"password\": \"123456\", \"displayName\": \"Direct\"}"
+}

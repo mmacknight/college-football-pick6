@@ -1,0 +1,404 @@
+# College Football Pick6 - Project Plan & Progress
+
+## Core Concept
+Draft college teams, +1 per win. Fantasy football simplified - no individual players, just teams.
+
+## 🎯 Ultimate Goal: Production-Ready Fantasy Sports Platform
+A complete fantasy college football app where users create leagues, draft teams, and compete based on real game results throughout the season.
+
+## ✅ COMPLETED - Full-Stack Application (January 2025)
+Built complete React web app with AWS backend, full user flows, and real-time features.
+
+### 🎯 Core Features Implemented:
+1. **Authentication System** - JWT-based login/signup with secure password hashing
+2. **League Management** - Create leagues, invite friends via join codes, admin controls
+3. **Draft System** - Full snake draft with real-time updates and beautiful UI
+4. **Live Standings** - Real win calculations from actual game data
+5. **Weekly Games View** - See how each team performed with live score bugs
+6. **Profile Management** - Update display name and email with responsive modal interface
+7. **Mobile-First Design** - Responsive across all devices with native-feel UX
+
+## 📱 iOS App Structure (SwiftUI)
+**Status**: ⏳ Planned - Will match React app feature set
+
+```
+ios-app/
+├── App.swift                 # Main app entry point
+├── ContentView.swift         # Root navigation controller
+├── Models/
+│   ├── User.swift           # User data models
+│   ├── League.swift         # League and team models
+│   └── Game.swift           # Game and school models
+├── Views/
+│   ├── AuthView.swift       # Login/signup screen
+│   ├── LeagueListView.swift # League dashboard
+│   ├── LobbyView.swift      # Pre-draft waiting room
+│   ├── DraftView.swift      # Snake draft interface
+│   ├── StandingsView.swift  # League standings
+│   └── GamesView.swift      # Weekly team performance
+├── Services/
+│   ├── APIService.swift     # HTTP client for backend APIs
+│   └── WebSocketService.swift # Real-time draft updates
+└── Utils/
+    ├── AuthManager.swift    # JWT token management
+    └── Extensions.swift     # SwiftUI helpers
+```
+
+### 🎯 iOS Features (Planned):
+- **Native SwiftUI Interface** - Clean, modern design matching React app UX
+- **Push Notifications** - Real-time alerts for draft updates and game results
+- **Offline Support** - View drafted teams and standings without internet
+- **iOS Integration** - Widgets, Shortcuts, Spotlight search
+- **Apple ID Sign-In** - Optional streamlined authentication
+- **SharePlay Support** - Watch drafts together with friends
+
+### 📱 iOS Development Roadmap:
+1. **Phase 1**: Authentication and league browsing
+2. **Phase 2**: Draft interface with real-time updates  
+3. **Phase 3**: Standings and games views
+4. **Phase 4**: Push notifications and iOS-specific features
+5. **Phase 5**: App Store submission and marketing
+
+## 🌐 React Web App - Production Ready
+**Status**: ✅ Complete - All features implemented and tested
+
+```
+web-app/
+├── src/
+│   ├── App.jsx               # Main app with routing
+│   ├── main.jsx              # React entry point
+│   ├── components/
+│   │   ├── AuthView.jsx      # Login/signup screen with prominent logo
+│   │   ├── ProfessionalHeader.jsx # Professional desktop-native header component
+│   │   ├── LeagueListView.jsx # League dashboard
+│   │   ├── LobbyView.jsx     # Pre-draft waiting room
+│   │   ├── TeamDraftView.jsx # Snake draft interface
+│   │   ├── StandingsView.jsx # League standings with tabs
+│   │   ├── GamesView.jsx     # Weekly team performance
+│   │   ├── AdminView.jsx     # League management
+│   │   └── TeamDetailView.jsx # Team detail modal
+│   ├── services/
+│   │   ├── apiService.js     # HTTP client for backend APIs
+│   │   └── websocketService.js # Real-time notifications
+│   └── styles/               # Component-specific CSS files
+├── public/
+│   └── assets/
+│       └── logo.png          # Custom app logo for branding
+├── index.html                # Mobile-optimized HTML
+├── package.json              # React + Vite dependencies
+└── vite.config.js            # Development server config
+```
+
+### 🔧 Technical Stack:
+- **Frontend**: React 18 + Vite + CSS3 (mobile-first responsive)
+- **API Integration**: REST client with JWT token management
+- **Real-time**: WebSocket notifications for draft updates
+- **Routing**: React Router with protected routes and state management
+
+## 🚀 Local Development Setup
+
+### React Web App:
+```bash
+cd web-app
+npm install
+npm run dev
+# Visit http://localhost:5173
+```
+
+### AWS Backend:
+```bash
+cd backend
+./start-local.sh        # Starts PostgreSQL + SAM local API
+# Backend runs on http://127.0.0.1:3001
+```
+
+### Data Setup (One-time):
+```bash
+cd backend
+python scripts/load_schools.py    # Load 134 FBS teams
+python scripts/load_games.py      # Load game data for current season
+```
+
+## ⚙️ AWS Backend Structure
+**Status**: ✅ Complete - Production ready with 20+ endpoints
+
+```
+backend/
+├── template.yaml              # SAM CloudFormation template
+├── docker-compose.yml         # Local PostgreSQL + Adminer
+├── migrations/init.sql        # Database schema + indexes
+├── requirements.txt           # Python dependencies
+├── local-env.json            # Environment variables
+├── dev_server.py             # Local development server
+├── scripts/
+│   ├── load_schools.py       # Load 134 FBS schools
+│   └── load_games.py         # Load game data from API
+├── lambdas/
+│   ├── shared/
+│   │   ├── database.py       # SQLAlchemy models + session
+│   │   ├── responses.py      # Standardized API responses
+│   │   ├── auth.py           # JWT authentication utilities
+│   │   └── week_utils.py     # Week detection logic
+│   ├── auth/
+│   │   ├── login.py          # POST /auth/login
+│   │   └── signup.py         # POST /auth/signup
+│   ├── leagues/
+│   │   ├── create.py         # POST /leagues
+│   │   ├── join.py           # POST /leagues/{id}/join
+│   │   ├── list.py           # GET /leagues
+│   │   ├── lobby.py          # GET /leagues/{id}/lobby
+│   │   ├── get_settings.py   # GET /leagues/{id}/settings
+│   │   ├── update_settings.py # PUT /leagues/{id}/settings
+│   │   ├── start_draft.py    # POST /leagues/{id}/start-draft
+│   │   ├── draft_status.py   # GET /leagues/{id}/draft-status
+│   │   ├── my_teams.py       # GET /leagues/{id}/my-teams
+│   │   ├── draft_board.py    # GET /leagues/{id}/draft-board
+│   │   ├── games_week.py     # GET /leagues/{id}/games/week/{week}
+│   │   └── reset_draft.py    # POST /leagues/{id}/reset-draft
+│   ├── standings/
+│   │   └── get.py            # GET /leagues/{id}/standings
+│   ├── teams/
+│   │   └── select.py         # POST /teams/select
+│   ├── schools/
+│   │   └── list.py           # GET /schools
+│   └── admin/
+│       └── season_init.py    # POST /admin/season/init
+└── events/
+    └── season_init.json      # SAM invoke events
+```
+
+## 🎉 COMPLETED - Full AWS SAM Backend (Production Ready)
+
+### ✅ COMPLETE API SUITE - ALL ENDPOINTS WORKING:
+
+#### **Authentication & User Management:**
+- `POST /auth/signup` - User registration with JWT tokens
+- `POST /auth/login` - User authentication with JWT
+
+#### **League Management:**
+- `GET /leagues` - Lists user's leagues
+- `POST /leagues` - Creates leagues with join codes  
+- `POST /leagues/{id}/join` - Join league with team name
+- `GET /leagues/{id}/lobby` - Pre-draft lobby with member list
+- `GET /leagues/{id}/settings` - Admin-only league management
+- `PUT /leagues/{id}/settings` - Update league configuration
+- `DELETE /leagues/{id}/players/{userId}` - Remove players (admin only)
+
+#### **Draft System:**
+- `POST /leagues/{id}/start-draft` - Initialize draft order
+- `GET /leagues/{id}/draft-status` - Current draft state & turn order
+- `GET /leagues/{id}/my-teams` - User's drafted teams
+- `GET /leagues/{id}/draft-board` - League-wide draft history
+- `POST /teams/select` - Make draft picks with validation
+- `POST /leagues/{id}/reset-draft` - Reset draft (admin only)
+
+#### **Game Results & Standings:**
+- `GET /schools` - All 134 FBS schools with colors/conferences
+- `GET /leagues/{id}/standings` - Live standings with real win counts
+- `GET /leagues/{id}/games/week/{week}` - Weekly team performance with scores
+- `POST /admin/season/init` - Load schools and game data
+
+### 🏗️ Production-Ready Architecture:
+- **Tech Stack**: Python + AWS SAM + PostgreSQL + API Gateway
+- **Authentication**: JWT + bcrypt password hashing + role-based access
+- **Database**: 134 FBS schools + complete game data with real win calculations
+- **Real-time**: WebSocket notifications for draft updates
+- **Security**: Member verification, turn validation, admin-only endpoints
+- **Local Development**: Docker Compose + SAM CLI with hot reload
+
+## ✅ RECENT UPDATES - January 2025
+
+### 🐛 **Standings Record Fix - Team Win/Loss Display:**
+- ✅ **Backend Enhancement** - Added total losses calculation to standings API
+- ✅ **Frontend Record Display** - Shows win-loss record format (e.g., "5-2") in standings
+- ✅ **Improved Data Flow** - Backend now returns both wins and losses for each member
+- ✅ **Visual Polish** - Added styled record badge in standings view for better readability
+
+### 🎨 **Game Display Styling Improvements - Live Games & Win Backgrounds:**
+- ✅ **Fixed Live Game Issues** - Removed problematic overlay line that was covering yellow live background
+- ✅ **Enhanced Live Animation** - Improved scoreGlow animation with proper orange glow effect
+- ✅ **Subtle Win Background** - Added light green background for wins (similar to yellow live style)
+- ✅ **Consistent Styling** - Applied same improvements across GameResult, GamesView, and TeamDetailView
+- ✅ **Visual Clarity** - Wins get subtle positive background, losses remain plain for better contrast
+- ✅ **Fixed LIVE Status Layout** - Corrected cramped LIVE indicator by changing to vertical column layout
+- ✅ **Improved Score Bug Spacing** - LIVE/FINAL badges now properly spaced with game time information
+- ✅ **Repositioned Game Time Info** - Moved Q1 and time information below score for cleaner layout while keeping LIVE status in place
+- ✅ **Fixed CSS Conflicts** - Scoped team-name styles to prevent conflicts with other components (LeagueSettings, etc.)
+- ✅ **Restored Bold Team Names** - Changed font-weight back to 700 for bolder, more prominent team name display
+- ✅ **Bold Player Names** - Made all player/member names bold (font-weight: 700) across all components
+- ✅ **Right-Aligned Status Pills** - LIVE/FINAL status pills now consistently align to the right side
+- ✅ **Fixed Status Pill Positioning** - Improved flex layout to ensure FINAL/LIVE pills are properly right-aligned in score bugs
+- ✅ **Redesigned Live Game Layout** - Created simple, clean single-badge design: "LIVE Q3 5:15" in one red badge
+- ✅ **Added Game Start Times** - Backend now sends start_date field formatted as readable date/time for scheduled games
+- ✅ **Fixed Standings Game Dates** - Updated standings API to also include formatted dates instead of just "Scheduled"
+
+### 🎨 **Profile Management System - User Account Features:**
+- ✅ **ProfileModal Component** - Beautiful modal interface for editing user profile
+- ✅ **Update Display Name** - Change display name with real-time validation
+- ✅ **Update Email Address** - Change email with duplicate detection and validation
+- ✅ **Mobile-First Design** - Responsive modal that transforms to bottom sheet on mobile
+- ✅ **Desktop Integration** - Profile dropdown in professional header with user avatar
+- ✅ **Mobile User Button** - Tap user avatar on mobile to open profile modal directly
+- ✅ **Backend API** - `PUT /auth/profile` endpoint for secure profile updates
+- ✅ **Real-time Updates** - User data updates instantly across all components
+
+### 🎨 **Weekly Games View - New Feature:**
+- ✅ **Games Tab** - Added new tab to StandingsView for weekly team performance
+- ✅ **Week Navigation** - Toggle between past/future weeks with current week detection
+- ✅ **Score Bugs** - Mini score displays for live and completed games
+- ✅ **Team Colors** - Opponent team dots with real school colors
+- ✅ **Clean Design** - Sidebar color indicators (blue=win, gray=loss) instead of aggressive red/green
+- ✅ **Desktop Responsive** - Grid layout with hover effects for larger screens
+
+### 🎨 **Professional Header System - Major UI Overhaul:**
+- ✅ **ProfessionalHeader Component** - Complete redesign for desktop-native experience
+- ✅ **Logo Integration** - User's custom logo prominently featured across all pages
+- ✅ **Desktop-First Design** - Professional website feel with sophisticated styling
+- ✅ **Separate Breadcrumb Bar** - Clean navigation below main header (not cluttered inside)
+- ✅ **User Menu Dropdown** - Avatar, name, profile/settings/logout with professional styling
+- ✅ **Responsive Scaling** - Different layouts for desktop vs mobile with appropriate sizing
+- ✅ **Applied Everywhere** - Unified across all views (Dashboard, Draft, Lobby, Settings, etc.)
+
+### 🎨 **Enhanced Sign-In Experience:**
+- ✅ **Prominent Logo Branding** - User's logo featured prominently on authentication page
+- ✅ **Optimized Layout** - Removed redundant text since logo contains app name
+- ✅ **Professional Polish** - Larger logo sizing with subtle hover effects and enhanced visual hierarchy
+
+### 🔧 **Backend Enhancements:**
+- ✅ **Profile API** - `PUT /auth/profile` endpoint for updating user display name and email
+- ✅ **Games API** - `GET /leagues/{id}/games/week/{week}` with dynamic week detection
+- ✅ **Week Utils** - Smart current week calculation based on actual game data
+- ✅ **Opponent Colors** - API returns opponent school colors for UI
+- ✅ **CSS Fixes** - Resolved tab navigation visibility issues with proper specificity
+
+### 🎯 **UI/UX Improvements:**
+- ✅ **Reduced Redundancy** - Simplified game displays, removed duplicate visual elements
+- ✅ **Retro Score Bugs** - Clean ESPN-style score displays for live games
+- ✅ **Proper Spacing** - Fixed gap between league header and tab navigation
+- ✅ **Mobile Optimization** - Responsive design scales beautifully across devices
+- ✅ **Professional Branding** - Consistent logo treatment and visual identity throughout app
+
+## ✅ COMPLETED FEATURES SUMMARY
+
+### 🎯 **Complete User Experience:**
+- **Authentication** - Secure JWT-based login/signup system
+- **League Management** - Create, join, and administer fantasy leagues  
+- **Pre-Draft Lobby** - Beautiful waiting room with member management
+- **Snake Draft System** - Real-time drafting with turn validation
+- **Live Standings** - Rankings based on actual college football results
+- **Weekly Games** - Team performance tracking with live scores
+- **Admin Controls** - League creator tools for management
+
+### 🎨 **Design Philosophy:**
+- **Mobile-First** - Optimized for phone usage with desktop enhancements
+- **Real-Time** - WebSocket updates for immediate draft feedback
+- **Professional UI** - Custom logo integration and sophisticated desktop-native styling
+- **Responsive** - Seamless experience across all device sizes
+- **Brand Consistency** - Prominent logo placement and unified visual identity
+
+## 📊 CURRENT DATABASE SCHEMA
+
+### 🗄️ **Production PostgreSQL Database:**
+```sql
+-- 134 FBS Schools with real data
+schools (id, name, conference, primary_color, mascot, abbreviation)
+
+-- Complete game results for win calculations  
+games (id, season, week, home_id, away_id, home_points, away_points, completed)
+
+-- User accounts with JWT authentication
+users (id, email, password_hash, display_name)
+
+-- Fantasy leagues with admin controls
+leagues (id, name, season, join_code, created_by, status, max_teams_per_user)
+
+-- Team membership (one per user per league)
+league_teams (league_id, user_id, team_name, draft_position, joined_at)
+
+-- School assignments (drafted teams)
+league_team_school_assignments (league_id, user_id, school_id, draft_round, draft_pick_overall)
+
+-- Draft state management
+league_drafts (league_id, current_pick_overall, current_user_id, total_picks)
+```
+
+### 📈 **Live Data Integration:**
+- **Real Game Results** - 1,482+ games loaded from CollegeFootballData.com API
+- **Accurate Win Calculations** - Fantasy points based on actual game outcomes
+- **Current Week Detection** - Dynamic week calculation based on game schedules
+- **School Metadata** - Official colors, conferences, and mascots for all 134 FBS teams
+
+## 📋 NEXT STEPS - Production Ready
+
+### 🚀 **Ready for Production Deployment:**
+The application is feature-complete and ready for production deployment with:
+- ✅ **Complete backend API suite** (20+ endpoints)
+- ✅ **Full-featured React app** (authentication, leagues, drafting, standings, games)
+- ✅ **Real-time capabilities** (WebSocket notifications)
+- ✅ **Mobile-optimized UI** (responsive design across all devices)
+- ✅ **Production database schema** (PostgreSQL with real game data)
+
+### 🔥 **Immediate Next Steps:**
+1. **[ ] Production Deployment**
+   - Deploy AWS backend to production (Lambda + RDS)
+   - Deploy React app to hosting (Vercel/Netlify/S3)
+   - Configure production environment variables
+   - Set up custom domain and SSL certificates
+
+2. **[ ] iOS App Development**
+   - Create SwiftUI project matching React app structure
+   - Implement authentication and league management
+   - Build native draft interface with real-time updates
+   - Add iOS-specific features (push notifications, widgets)
+
+3. **[ ] Season Data Automation**
+   - Set up weekly game data syncing
+   - Automated win calculation updates
+   - Current week detection in production
+
+### 🎮 **Post-Launch Enhancements:**
+- [ ] Android native app
+- [ ] League chat and messaging system
+- [ ] Advanced statistics and insights
+- [ ] Historical season archives
+- [ ] Public league discovery
+- [ ] Mobile app widgets and shortcuts
+
+## 🏗️ TECHNICAL ARCHITECTURE
+
+### 💻 **Frontend Stack:**
+- **React 18** + Vite for fast development and builds
+- **CSS3** with mobile-first responsive design principles
+- **WebSocket** integration for real-time draft notifications
+- **React Router** for client-side navigation with protected routes
+
+### ⚙️ **Backend Stack:**
+- **AWS SAM** (Serverless Application Model) for Lambda deployment
+- **Python 3.9** with SQLAlchemy ORM for database interactions
+- **PostgreSQL** production database with comprehensive college football data
+- **JWT Authentication** with bcrypt password hashing
+- **API Gateway** with CORS configuration for frontend integration
+
+### 📊 **Data Sources:**
+- **CollegeFootballData.com API** - Official game results and team information
+- **134 FBS Schools** - Complete roster with colors, conferences, mascots
+- **Live Game Data** - Real-time scores and scheduling for accurate win calculations
+
+### 🔧 **Local Development:**
+- **Docker Compose** - PostgreSQL database and Adminer interface
+- **SAM CLI** - Local Lambda simulation with hot reload
+- **Modular Architecture** - Shared utilities and clean separation of concerns
+
+---
+
+## 🎯 PROJECT STATUS: PRODUCTION READY
+
+**Pick6** is a complete, production-ready fantasy college football platform with:
+- ✅ **20+ API endpoints** covering all user flows
+- ✅ **Beautiful responsive UI** optimized for mobile and desktop
+- ✅ **Real-time draft system** with WebSocket notifications
+- ✅ **Secure authentication** and authorization
+- ✅ **Live game integration** with actual college football data
+- ✅ **Complete admin tools** for league management
+
+**Ready for deployment and real users! 🚀**

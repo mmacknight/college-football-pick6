@@ -1,0 +1,7 @@
+{
+  "httpMethod": "GET",
+  "headers": {
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTZhMGEwOTItZTM4Mi00NTljLWFiZjAtN2UwNjllMTI2ZmRmIiwiZW1haWwiOiJyZXN0YXJ0QHRlc3QuY29tIiwiZXhwIjoxNzU3NzM2NDU5LCJpYXQiOjE3NTUxNDQ0NTl9.OUdMGuV-xB_RYZKi4kbm_MFHSqMiSz_cLa_-kSBXSlI"
+  },
+  "queryStringParameters": null
+}

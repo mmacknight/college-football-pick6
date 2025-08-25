@@ -1,0 +1,7 @@
+{
+  "Parameters": {
+    "DATABASE_URL": "postgresql://pick6admin:pick6password@localhost:5432/pick6db",
+    "JWT_SECRET": "your-local-development-secret-key-change-for-production",
+    "CFB_API_KEY": "your-cfb-api-key-here"
+  }
+}

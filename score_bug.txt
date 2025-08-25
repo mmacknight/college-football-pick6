@@ -1,0 +1,52 @@
+# Score Bug Component Unification - Goal & Challenges
+
+## Goal
+Use the EXACT same React component for game displays in both:
+1. Main Games tab (GamesView.jsx) 
+2. Player modal (TeamDetailView.jsx)
+
+Currently they show different formats:
+- Games tab: "Team vs Opponent" with colored dots ✅ (preferred format)
+- Modal: "Team @ Opponent" without dots ❌ (inconsistent)
+
+## Technical Challenge
+The two components expect different data structures:
+
+**GamesView GameResult expects:**
+```javascript
+team = {
+  name: "USC",
+  game: {
+    opponent: "Arizona", 
+    score: "10-23",
+    status: "completed"
+  }
+}
+```
+
+**TeamDetailView expects:**
+```javascript
+team = { name: "USC" }
+gameData = {
+  opponent: "Arizona",
+  score: "10-23", 
+  status: "completed"
+}
+```
+
+## User Requirements
+1. Both views must show IDENTICAL format (team dots, "vs", opponent dots)
+2. Must be literally the same component (not just similar logic)
+3. Modal should dismiss when clicking outside
+4. Show game dates instead of just "Scheduled" for upcoming games
+
+## Previous Failed Attempts
+- Created new shared component (user rejected - not the same component)
+- Tried to export/import GameResult but data structure mismatch causes issues
+- Need to either normalize data structures OR make GameResult flexible enough to handle both
+
+## Next Steps
+1. Export GameResult component from GamesView
+2. Modify TeamDetailView to structure data exactly as GameResult expects
+3. Ensure both views render identically
+4. Test that changes to GameResult affect both views simultaneously
