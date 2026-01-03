@@ -6,8 +6,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any
 
 # Import from shared layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, League, User, LeagueTeam, LeagueTeamSchoolAssignment, School, Game
+from shared.database import get_db_session, League, User, LeagueTeam, LeagueTeamSchoolAssignment, School, Game
 from sqlalchemy.orm import joinedload
 from sqlalchemy import and_, or_, text
 

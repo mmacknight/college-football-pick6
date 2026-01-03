@@ -4,10 +4,9 @@ import os
 import re
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, User
-from responses import success_response, error_response, validation_error_response
-from auth import hash_password, create_jwt_token
+from shared.database import get_db_session, User
+from shared.responses import success_response, error_response, validation_error_response
+from shared.auth import hash_password, create_jwt_token
 from sqlalchemy.exc import IntegrityError
 
 def validate_email(email):

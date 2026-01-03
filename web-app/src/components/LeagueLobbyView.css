@@ -366,8 +366,17 @@
   font-weight: 600;
 }
 
-.start-draft-btn {
-  width: 100%;
+.draft-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-draft-btn, .skip-draft-btn {
+  flex: 1;
+  min-width: 200px;
   padding: 16px 24px;
   font-size: 18px;
   font-weight: 700;
@@ -394,6 +403,32 @@
   background: #e9ecef;
   color: #6c757d;
   cursor: not-allowed;
+}
+
+.skip-draft-btn.ready {
+  background: linear-gradient(135deg, #fd7e14, #e55a2d);
+  color: white;
+  box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+}
+
+.skip-draft-btn.ready:hover {
+  background: linear-gradient(135deg, #e55a2d, #dc3545);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(253, 126, 20, 0.4);
+}
+
+.skip-draft-btn.disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.draft-requirement {
+  color: #dc3545;
+  font-size: 12px;
+  margin: 8px 0 0 0;
+  font-style: italic;
+  text-align: center;
 }
 
 /* Waiting Info Section */

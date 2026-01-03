@@ -1,0 +1,6 @@
+{
+  "Environment": "dev",
+  "DatabaseUrl": "postgresql://user:pass@your-neon-host.neon.tech:5432/pick6db",
+  "JWTSecret": "your-dev-jwt-secret-change-this",
+  "CFBApiKey": "your-cfb-api-key-here"
+}

@@ -8,13 +8,15 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', maxTeamsPerUser: 6 });
+  const [editForm, setEditForm] = useState({ name: '', maxTeamsPerUser: 6, joinCode: '' });
   const [actionLoading, setActionLoading] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [editingTeams, setEditingTeams] = useState([]);
   const [availableSchools, setAvailableSchools] = useState([]);
   const [schoolSearchTerm, setSchoolSearchTerm] = useState('');
+  const [showAddTeamForm, setShowAddTeamForm] = useState(false);
+  const [addTeamForm, setAddTeamForm] = useState({ playerName: '', teamName: '' });
 
   // Check if current user is the league creator
   const isCreator = user && league && user.id === league.createdBy;
@@ -47,7 +49,8 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
       setLeagueData(data);
       setEditForm({
         name: data.league.name,
-        maxTeamsPerUser: data.league.maxTeamsPerUser
+        maxTeamsPerUser: data.league.maxTeamsPerUser,
+        joinCode: data.league.joinCode || ''
       });
     } catch (err) {
       console.error('Failed to load league settings:', err);
@@ -160,6 +163,30 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
     }
   };
 
+  const handleSkipDraft = async () => {
+    if (!confirm('Are you sure you want to skip the draft and activate the league for manual team assignment? You can assign teams to players manually in the Member Management section below.')) {
+      return;
+    }
+
+    setActionLoading('skip-draft');
+    setError(null);
+    setSuccessMessage('');
+
+    try {
+      await apiService.skipDraftActivateLeague(league.id);
+      
+      // Reload settings to get updated league status
+      await loadLeagueSettings();
+      setSuccessMessage('League activated successfully! You can now manually assign teams to players in the Member Management section below.');
+      
+    } catch (err) {
+      console.error('Failed to activate league:', err);
+      setError(err.message || 'Failed to activate league');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const handleEditPlayerTeams = async (player) => {
     setEditingPlayer(player);
     // Initialize with current teams or empty array
@@ -217,6 +244,39 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
 
   const handleRemoveTeam = (schoolId) => {
     setEditingTeams(editingTeams.filter(team => team.id !== schoolId));
+  };
+
+  const handleAddManualTeam = async (e) => {
+    e.preventDefault();
+    setActionLoading('add-manual-team');
+    setError(null);
+    setSuccessMessage('');
+
+    try {
+      const response = await apiService.addManualTeam(
+        league.id, 
+        addTeamForm.playerName, 
+        addTeamForm.teamName
+      );
+      
+      // Reload settings to get updated member list
+      await loadLeagueSettings();
+      setShowAddTeamForm(false);
+      setAddTeamForm({ playerName: '', teamName: '' });
+      setSuccessMessage(response.message || 'Manual team added successfully!');
+      
+    } catch (err) {
+      console.error('Failed to add manual team:', err);
+      setError(err.message || 'Failed to add manual team');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleCancelAddTeam = () => {
+    setShowAddTeamForm(false);
+    setAddTeamForm({ playerName: '', teamName: '' });
+    setError(null);
   };
 
   if (!isCreator) {
@@ -326,7 +386,7 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
               <span>{leagueData?.league?.maxTeamsPerUser}</span>
             </div>
             
-            {leagueData?.league?.status === 'pre_draft' && (
+            {['pre_draft', 'drafting', 'active'].includes(leagueData?.league?.status) && (
               <button 
                 className="edit-button"
                 onClick={() => setIsEditing(true)}
@@ -346,6 +406,21 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
                 required
                 maxLength={100}
               />
+            </div>
+            <div className="form-group">
+              <label>Join Code:</label>
+              <input
+                type="text"
+                value={editForm.joinCode}
+                onChange={(e) => setEditForm(prev => ({ ...prev, joinCode: e.target.value.toUpperCase() }))}
+                placeholder="4-8 alphanumeric characters"
+                required
+                minLength={4}
+                maxLength={8}
+                pattern="[A-Z0-9]{4,8}"
+                title="4-8 alphanumeric characters"
+              />
+              <small className="form-hint">Must be 4-8 alphanumeric characters</small>
             </div>
             <div className="form-group">
               <label>Max Teams per Player:</label>
@@ -373,7 +448,8 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
                   setIsEditing(false);
                   setEditForm({
                     name: leagueData.league.name,
-                    maxTeamsPerUser: leagueData.league.maxTeamsPerUser
+                    maxTeamsPerUser: leagueData.league.maxTeamsPerUser,
+                    joinCode: leagueData.league.joinCode || ''
                   });
                 }}
               >
@@ -390,19 +466,31 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
           <h3>Draft Management</h3>
           <div className="draft-management">
             <div className="draft-info">
-              <h4>Ready to Start Draft?</h4>
-              <p>Once you start the draft, players will be able to begin selecting their teams. League settings will be locked during the draft.</p>
+              <h4>Choose How to Proceed</h4>
+              <p>You can either start a draft for players to select their own teams, or skip the draft and manually assign teams yourself.</p>
               <p><strong>Current Members:</strong> {leagueData?.stats?.totalMembers || 0} players</p>
             </div>
-            <button
-              className="start-draft-button"
-              onClick={handleStartDraft}
-              disabled={actionLoading === 'start-draft' || (leagueData?.stats?.totalMembers || 0) < 2}
-            >
-              {actionLoading === 'start-draft' ? 'Starting Draft...' : 'Start Draft'}
-            </button>
+            <div className="draft-buttons">
+              <button
+                className="start-draft-button"
+                onClick={handleStartDraft}
+                disabled={actionLoading === 'start-draft' || (leagueData?.stats?.totalMembers || 0) < 2}
+              >
+                {actionLoading === 'start-draft' ? 'Starting Draft...' : 'Start Draft'}
+              </button>
+              <button
+                className="skip-draft-button"
+                onClick={handleSkipDraft}
+                disabled={actionLoading === 'skip-draft' || (leagueData?.stats?.totalMembers || 0) < 1}
+              >
+                {actionLoading === 'skip-draft' ? 'Activating...' : 'Skip Draft, Manual Assignment'}
+              </button>
+            </div>
             {(leagueData?.stats?.totalMembers || 0) < 2 && (
               <p className="draft-requirement">Need at least 2 players to start the draft</p>
+            )}
+            {(leagueData?.stats?.totalMembers || 0) < 1 && (
+              <p className="draft-requirement">Need at least 1 player to activate the league</p>
             )}
           </div>
         </div>
@@ -429,7 +517,70 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
 
       {/* Member Management */}
       <div className="settings-section">
-        <h3>Member Management</h3>
+        <div className="section-header">
+          <h3>Member Management</h3>
+          {leagueData?.league?.status === 'pre_draft' && !showAddTeamForm && (
+            <button
+              className="add-team-button"
+              onClick={() => setShowAddTeamForm(true)}
+            >
+              + Add Manual Team
+            </button>
+          )}
+        </div>
+
+        {/* Manual Team Addition Form */}
+        {showAddTeamForm && (
+          <div className="add-team-form">
+            <h4>Add Manual Team</h4>
+            <p className="form-description">
+              Add a team for a player who hasn't signed up yet. This creates a placeholder that they can claim later.
+            </p>
+            <form onSubmit={handleAddManualTeam}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Player Name:</label>
+                  <input
+                    type="text"
+                    value={addTeamForm.playerName}
+                    onChange={(e) => setAddTeamForm(prev => ({ ...prev, playerName: e.target.value }))}
+                    placeholder="Enter player's name"
+                    required
+                    maxLength={50}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Team Name:</label>
+                  <input
+                    type="text"
+                    value={addTeamForm.teamName}
+                    onChange={(e) => setAddTeamForm(prev => ({ ...prev, teamName: e.target.value }))}
+                    placeholder="Enter team name"
+                    required
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+              <div className="form-actions">
+                <button 
+                  type="submit" 
+                  className="save-button"
+                  disabled={actionLoading === 'add-manual-team'}
+                >
+                  {actionLoading === 'add-manual-team' ? 'Adding...' : 'Add Team'}
+                </button>
+                <button 
+                  type="button" 
+                  className="cancel-button"
+                  onClick={handleCancelAddTeam}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         <div className="members-list">
           {leagueData?.members?.map(member => (
             <div key={member.userId} className="member-item">
@@ -437,6 +588,7 @@ const LeagueSettingsView = ({ league, user, onBack, onLeagueUpdated, onUserUpdat
                 <div className="member-name">
                   {member.displayName}
                   {member.isCreator && <span className="creator-badge">Creator</span>}
+                  {member.isManualTeam && <span className="manual-badge">Manual</span>}
                 </div>
                 <div className="member-details">
                   Team: {member.teamName || 'No team name'} • 

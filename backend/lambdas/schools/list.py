@@ -2,11 +2,10 @@ import json
 import sys
 import os
 
-# Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, School, LeagueTeam, LeagueTeamSchoolAssignment
-from responses import success_response, error_response
-from auth import require_auth
+# Import from layer  
+from shared.database import get_db_session, School, LeagueTeam, LeagueTeamSchoolAssignment
+from shared.responses import success_response, error_response
+from shared.auth import require_auth
 from sqlalchemy import and_, not_
 
 def lambda_handler(event, context):
@@ -20,8 +19,15 @@ def lambda_handler(event, context):
         
         db = get_db_session()
         try:
-            # Start with all FBS schools
-            query = db.query(School).order_by(School.name)
+            # Define FBS conferences to filter to only FBS schools
+            fbs_conferences = [
+                'ACC', 'American Athletic', 'Big 12', 'Big Ten', 'Conference USA',
+                'FBS Independents', 'Mid-American', 'Mountain West', 'Pac-12', 
+                'SEC', 'Sun Belt'
+            ]
+            
+            # Start with only FBS schools by filtering by conference
+            query = db.query(School).filter(School.conference.in_(fbs_conferences)).order_by(School.name)
             
             # Filter by conference if specified
             if conference:
@@ -59,8 +65,9 @@ def lambda_handler(event, context):
                     'isTaken': is_taken
                 })
             
-            # Get unique conferences for filtering
+            # Get unique FBS conferences for filtering
             conferences = db.query(School.conference)\
+                .filter(School.conference.in_(fbs_conferences))\
                 .filter(School.conference.isnot(None))\
                 .distinct()\
                 .order_by(School.conference)\

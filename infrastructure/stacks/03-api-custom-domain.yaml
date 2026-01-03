@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Pick6 College Football - Custom API Domain Setup
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment name (dev or prod)
+  
+  DomainName:
+    Type: String
+    Default: cfbpick6.com
+    Description: Your domain name
+  
+  HostedZoneId:
+    Type: String
+    Default: Z02999291RLQ564DKGT1U
+    Description: Existing Route 53 Hosted Zone ID for cfbpick6.com
+  
+  ApiGatewayId:
+    Type: String
+    Description: API Gateway ID from backend stack
+  
+  CertificateArn:
+    Type: String
+    Description: SSL Certificate ARN from certificate stack (us-east-1)
+
+Metadata:
+  Tags:
+    Project: Pick6-CollegeFootball
+    Version: "2025"
+    Environment: !Ref Environment
+    ManagedBy: CloudFormation
+    Repository: https://github.com/mmacknight/college-football-pick6
+    CostCenter: Pick6-Infrastructure
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, prod]
+
+Resources:
+  # Custom Domain Name for API Gateway
+  ApiCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !If
+        - IsProduction
+        - !Sub "api.${DomainName}"
+        - !Sub "dev-api.${DomainName}"
+      CertificateArn: !Ref CertificateArn
+      SecurityPolicy: TLS_1_2
+      Tags:
+        - Key: Project
+          Value: Pick6-CollegeFootball
+        - Key: Version
+          Value: "2025"
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Repository
+          Value: https://github.com/mmacknight/college-football-pick6
+        - Key: CostCenter
+          Value: Pick6-Infrastructure
+
+  # Base Path Mapping for API Gateway
+  ApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref ApiCustomDomain
+      RestApiId: !Ref ApiGatewayId
+      Stage: !Ref Environment
+    DependsOn: ApiCustomDomain
+
+  # Route 53 DNS Record
+  ApiDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !If
+        - IsProduction
+        - !Sub "api.${DomainName}"
+        - !Sub "dev-api.${DomainName}"
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApiCustomDomain.DistributionDomainName
+        HostedZoneId: !GetAtt ApiCustomDomain.DistributionHostedZoneId
+      Comment: !Sub "API endpoint for ${Environment} environment"
+
+Outputs:
+  CustomDomainName:
+    Description: Custom domain name for the API
+    Value: !Ref ApiCustomDomain
+    Export:
+      Name: !Sub "${AWS::StackName}-CustomDomainName"
+  
+  ApiUrl:
+    Description: API URL with custom domain
+    Value: !If
+      - IsProduction
+      - !Sub "https://api.${DomainName}/"
+      - !Sub "https://dev-api.${DomainName}/"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiUrl"
+  
+  DistributionDomainName:
+    Description: CloudFront distribution domain name
+    Value: !GetAtt ApiCustomDomain.DistributionDomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionDomainName"

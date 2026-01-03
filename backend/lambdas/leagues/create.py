@@ -5,10 +5,9 @@ import random
 import string
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, League, LeagueTeam, User
-from responses import success_response, error_response, validation_error_response
-from auth import require_auth, get_user_id_from_event
+from shared.database import get_db_session, League, LeagueTeam, User
+from shared.responses import success_response, error_response, validation_error_response
+from shared.auth import require_auth, get_user_id_from_event
 
 def generate_join_code():
     """Generate a random 8-character join code"""

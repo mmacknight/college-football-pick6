@@ -5,11 +5,9 @@ import requests
 from typing import List, Dict
 
 # Import from layer
-sys.path.append('/opt/python/python')
-
-from database import get_db_session, School
+from shared.database import get_db_session, School
 from sqlalchemy import text
-from responses import success_response, error_response
+from shared.responses import success_response, error_response
 
 # CollegeFootballData API configuration
 CFB_API_BASE = "https://api.collegefootballdata.com"

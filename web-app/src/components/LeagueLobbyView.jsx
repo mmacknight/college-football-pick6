@@ -3,7 +3,7 @@ import { apiService } from '../services/apiService';
 import ProfessionalHeader from './ProfessionalHeader';
 import './LeagueLobbyView.css';
 
-const LeagueLobbyView = ({ leagueId, user, onStartDraft, onBack, onLeagueSettings, onUserUpdate, onLogout }) => {
+const LeagueLobbyView = ({ leagueId, user, onStartDraft, onSkipDraft, onBack, onLeagueSettings, onUserUpdate, onLogout }) => {
   const [league, setLeague] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,24 +193,32 @@ const LeagueLobbyView = ({ leagueId, user, onStartDraft, onBack, onLeagueSetting
             <h2>Draft Control</h2>
             <div className="draft-info">
               <p>
-                {members.length < 2 
-                  ? `Need at least 2 players to start the draft (currently ${members.length})`
-                  : `Ready to start! ${members.length} players have joined.`
-                }
+                Choose how to proceed: start a draft for players to select their own teams, or skip the draft and manually assign teams.
               </p>
-              {canStartDraft && (
-                <p className="draft-ready">
-                  🎯 All set! Click "Start Draft" when everyone is ready.
-                </p>
-              )}
+              <p><strong>Current Members:</strong> {members.length} players</p>
             </div>
-            <button 
-              onClick={handleStartDraft}
-              disabled={!canStartDraft}
-              className={`start-draft-btn ${canStartDraft ? 'ready' : 'disabled'}`}
-            >
-              {canStartDraft ? '🚀 Start Draft' : `Need ${2 - members.length} More Player${2 - members.length === 1 ? '' : 's'}`}
-            </button>
+            <div className="draft-buttons">
+              <button 
+                onClick={handleStartDraft}
+                disabled={!canStartDraft}
+                className={`start-draft-btn ${canStartDraft ? 'ready' : 'disabled'}`}
+              >
+                {canStartDraft ? '🚀 Start Draft' : `Need ${2 - members.length} More Player${2 - members.length === 1 ? '' : 's'}`}
+              </button>
+              <button 
+                onClick={onSkipDraft}
+                disabled={members.length < 1}
+                className={`skip-draft-btn ${members.length >= 1 ? 'ready' : 'disabled'}`}
+              >
+                📝 Skip Draft, Manual Assignment
+              </button>
+            </div>
+            {members.length < 2 && (
+              <p className="draft-requirement">Need at least 2 players to start the draft</p>
+            )}
+            {members.length < 1 && (
+              <p className="draft-requirement">Need at least 1 player to activate the league</p>
+            )}
           </div>
         )}
 

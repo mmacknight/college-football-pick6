@@ -99,18 +99,22 @@ const StandingsView = ({ league: initialLeague, user, onBackToLeagues, onStartDr
 
   return (
     <div className="standings-container">
-      <ProfessionalHeader
-        user={user}
-        currentPage="league"
-        leagueName={league.name}
-        onNavigate={handleNavigation}
-        onUserUpdate={onUserUpdate}
-        onLogout={onLogout}
-        actions={headerActions}
-      />
+      {user ? (
+        <ProfessionalHeader
+          user={user}
+          currentPage="league"
+          leagueName={league.name}
+          onNavigate={handleNavigation}
+          onUserUpdate={onUserUpdate}
+          onLogout={onLogout}
+          actions={headerActions}
+        />
+      ) : (
+        <PublicHeader leagueName={league.name} />
+      )}
 
       <main className="standings-content">
-        <LeagueHeader league={league} user={user} onLeagueSettings={onLeagueSettings} />
+        <LeagueHeader league={league} user={user} onLeagueSettings={user ? onLeagueSettings : null} />
         
         {/* Mobile: Tab Navigation and Content */}
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
@@ -356,6 +360,31 @@ const ChevronIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="chevron-icon">
     <polyline points="9 18 15 12 9 6"></polyline>
   </svg>
+);
+
+const PublicHeader = ({ leagueName }) => (
+  <header className="public-header">
+    <div className="public-header-container">
+      <div className="brand-section">
+        <img 
+          src="/assets/logo.png" 
+          alt="Pick6 Logo" 
+          className="logo"
+        />
+        <div className="brand-text">
+          <h1 className="brand-name">Pick6</h1>
+          <span className="brand-tagline">College Football Fantasy</span>
+        </div>
+      </div>
+      
+      <div className="public-header-right">
+        <div className="league-info">
+          <h2 className="league-name">{leagueName}</h2>
+        </div>
+        <span className="public-badge">Public View</span>
+      </div>
+    </div>
+  </header>
 );
 
 export default StandingsView; 

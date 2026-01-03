@@ -1,4 +1,29 @@
 /* Game Result Component Styles */
+
+/* Multiple Games Container */
+.multiple-games-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.game-result.multiple {
+  border-left: 3px solid #dee2e6;
+  padding-left: 0.5rem;
+}
+
+.game-round {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
 .game-result {
   display: flex;
   flex-direction: column;

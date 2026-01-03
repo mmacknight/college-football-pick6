@@ -206,7 +206,15 @@ const TeamDetailView = ({ member, currentUser, leagueId, onClose, onTeamNameUpda
 };
 
 const TeamCard = ({ team, viewMode }) => {
-  const gameData = viewMode === 'games' ? team.game : team.currentGame;
+  // Handle both old structure (team.game/team.currentGame) and new structure (team.games array)
+  let gameData;
+  if (viewMode === 'games') {
+    // New structure: team.games is an array, old structure: team.game is a single object
+    gameData = team.games || (team.game ? [team.game] : null);
+  } else {
+    // currentGame is still a single game object
+    gameData = team.currentGame ? [team.currentGame] : null;
+  }
   
   return (
     <div className="team-card">
@@ -227,8 +235,8 @@ const TeamCard = ({ team, viewMode }) => {
 
       {viewMode === 'wins' ? (
         <WinsView team={team} />
-      ) : gameData ? (
-        <GameResult team={{ ...team, game: gameData }} compact={true} />
+      ) : gameData && gameData.length > 0 ? (
+        <GameResult team={{ ...team, games: gameData }} compact={true} />
       ) : (
         <div className="no-game-data">
           <p>No current game data available</p>

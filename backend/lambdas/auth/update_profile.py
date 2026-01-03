@@ -8,10 +8,9 @@ import sys
 import os
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, User
-from responses import success_response, error_response, validation_error_response
-from auth import require_auth, get_user_id_from_event
+from shared.database import get_db_session, User
+from shared.responses import success_response, error_response, validation_error_response
+from shared.auth import require_auth, get_user_id_from_event
 
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'

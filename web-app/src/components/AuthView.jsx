@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { apiService } from '../services/apiService';
 import './AuthView.css';
 
-const AuthView = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(true);
+const AuthView = ({ onLogin, onViewLeague }) => {
+  const [mode, setMode] = useState('login'); // 'login', 'signup', or 'viewCode'
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     displayName: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    joinCode: ''
   });
   const [errors, setErrors] = useState({});
 
@@ -31,24 +32,32 @@ const AuthView = ({ onLogin }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (!isLogin) {
-      if (!formData.displayName) {
-        newErrors.displayName = 'Display name is required';
+    if (mode === 'viewCode') {
+      if (!formData.joinCode) {
+        newErrors.joinCode = 'Invite code is required';
+      } else if (!/^[A-Z0-9]{4,8}$/.test(formData.joinCode.toUpperCase())) {
+        newErrors.joinCode = 'Invalid invite code format (4-8 alphanumeric characters)';
       }
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
+    } else {
+      if (!formData.email) {
+        newErrors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        newErrors.email = 'Email is invalid';
+      }
+      
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
+      
+      if (mode === 'signup') {
+        if (!formData.displayName) {
+          newErrors.displayName = 'Display name is required';
+        }
+        if (formData.password !== formData.confirmPassword) {
+          newErrors.confirmPassword = 'Passwords do not match';
+        }
       }
     }
     
@@ -65,19 +74,28 @@ const AuthView = ({ onLogin }) => {
     setErrors({});
     
     try {
-      let userData;
-      
-      if (isLogin) {
-        userData = await apiService.login(formData.email, formData.password);
+      if (mode === 'viewCode') {
+        // View league by invite code
+        const data = await apiService.viewLeagueByCode(formData.joinCode.toUpperCase());
+        if (onViewLeague && data) {
+          onViewLeague(data.leagueId);
+        }
       } else {
-        userData = await apiService.signup(
-          formData.email, 
-          formData.password, 
-          formData.displayName
-        );
+        // Login or signup
+        let userData;
+        
+        if (mode === 'login') {
+          userData = await apiService.login(formData.email, formData.password);
+        } else {
+          userData = await apiService.signup(
+            formData.email, 
+            formData.password, 
+            formData.displayName
+          );
+        }
+        
+        onLogin(userData);
       }
-      
-      onLogin(userData);
     } catch (error) {
       console.error('Auth error:', error);
       
@@ -93,13 +111,14 @@ const AuthView = ({ onLogin }) => {
     }
   };
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
+  const switchMode = (newMode) => {
+    setMode(newMode);
     setFormData({
       email: '',
       password: '',
       displayName: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      joinCode: ''
     });
     setErrors({});
   };
@@ -121,18 +140,25 @@ const AuthView = ({ onLogin }) => {
         <div className="auth-form-container">
           <div className="auth-toggle">
             <button 
-              className={`toggle-btn ${isLogin ? 'active' : ''}`}
-              onClick={() => setIsLogin(true)}
+              className={`toggle-btn ${mode === 'login' ? 'active' : ''}`}
+              onClick={() => switchMode('login')}
               type="button"
             >
               Sign In
             </button>
             <button 
-              className={`toggle-btn ${!isLogin ? 'active' : ''}`}
-              onClick={() => setIsLogin(false)}
+              className={`toggle-btn ${mode === 'signup' ? 'active' : ''}`}
+              onClick={() => switchMode('signup')}
               type="button"
             >
               Sign Up
+            </button>
+            <button 
+              className={`toggle-btn ${mode === 'viewCode' ? 'active' : ''}`}
+              onClick={() => switchMode('viewCode')}
+              type="button"
+            >
+              View League
             </button>
           </div>
 
@@ -143,72 +169,99 @@ const AuthView = ({ onLogin }) => {
               </div>
             )}
 
-            {!isLogin && (
-              <div className="form-group">
-                <label htmlFor="displayName">Display Name</label>
-                <input
-                  type="text"
-                  id="displayName"
-                  name="displayName"
-                  value={formData.displayName}
-                  onChange={handleInputChange}
-                  className={errors.displayName ? 'error' : ''}
-                  placeholder="Your name in the league"
-                />
-                {errors.displayName && (
-                  <span className="error-message">{errors.displayName}</span>
+            {mode === 'viewCode' ? (
+              <>
+                <div className="view-code-intro">
+                  <p>Enter a league invite code to view standings and scores</p>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="joinCode">League Invite Code</label>
+                  <input
+                    type="text"
+                    id="joinCode"
+                    name="joinCode"
+                    value={formData.joinCode}
+                    onChange={handleInputChange}
+                    className={errors.joinCode ? 'error' : ''}
+                    placeholder="Enter 4-8 character code"
+                    maxLength={8}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                  {errors.joinCode && (
+                    <span className="error-message">{errors.joinCode}</span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {mode === 'signup' && (
+                  <div className="form-group">
+                    <label htmlFor="displayName">Display Name</label>
+                    <input
+                      type="text"
+                      id="displayName"
+                      name="displayName"
+                      value={formData.displayName}
+                      onChange={handleInputChange}
+                      className={errors.displayName ? 'error' : ''}
+                      placeholder="Your name in the league"
+                    />
+                    {errors.displayName && (
+                      <span className="error-message">{errors.displayName}</span>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={errors.email ? 'error' : ''}
-                placeholder="your@email.com"
-              />
-              {errors.email && (
-                <span className="error-message">{errors.email}</span>
-              )}
-            </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={errors.email ? 'error' : ''}
+                    placeholder="your@email.com"
+                  />
+                  {errors.email && (
+                    <span className="error-message">{errors.email}</span>
+                  )}
+                </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={errors.password ? 'error' : ''}
-                placeholder="Min. 6 characters"
-              />
-              {errors.password && (
-                <span className="error-message">{errors.password}</span>
-              )}
-            </div>
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className={errors.password ? 'error' : ''}
+                    placeholder="Min. 6 characters"
+                  />
+                  {errors.password && (
+                    <span className="error-message">{errors.password}</span>
+                  )}
+                </div>
 
-            {!isLogin && (
-              <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={errors.confirmPassword ? 'error' : ''}
-                  placeholder="Confirm your password"
-                />
-                {errors.confirmPassword && (
-                  <span className="error-message">{errors.confirmPassword}</span>
+                {mode === 'signup' && (
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">Confirm Password</label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className={errors.confirmPassword ? 'error' : ''}
+                      placeholder="Confirm your password"
+                    />
+                    {errors.confirmPassword && (
+                      <span className="error-message">{errors.confirmPassword}</span>
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
 
             <button 
@@ -219,23 +272,27 @@ const AuthView = ({ onLogin }) => {
               {isLoading ? (
                 <LoadingSpinner />
               ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+                mode === 'login' ? 'Sign In' : 
+                mode === 'signup' ? 'Create Account' : 
+                'View League'
               )}
             </button>
           </form>
 
-          <div className="auth-footer">
-            <p>
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button 
-                type="button" 
-                className="link-btn" 
-                onClick={toggleMode}
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </div>
+          {mode !== 'viewCode' && (
+            <div className="auth-footer">
+              <p>
+                {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+                <button 
+                  type="button" 
+                  className="link-btn" 
+                  onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+                >
+                  {mode === 'login' ? 'Sign up' : 'Sign in'}
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

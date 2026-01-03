@@ -1,0 +1,341 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Pick6 PostgreSQL RDS Instance - Ultra Cheap Setup'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+    Description: Environment name
+
+  DBMasterUsername:
+    Type: String
+    Default: pick6admin
+    Description: Master username for RDS instance
+
+  DBMasterPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    Description: Master password for RDS instance (min 8 characters)
+
+  DBName:
+    Type: String
+    Default: pick6db
+    Description: Database name
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, prod]
+
+Resources:
+  # VPC for RDS (cheapest setup - single AZ)
+  RdsVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-rds-vpc-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Internet Gateway (for NAT)
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-rds-igw-${Environment}
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref RdsVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public Subnet 1 (for NAT Gateway)
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref RdsVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-public-subnet-1-${Environment}
+
+  # Public Subnet 2 (RDS requires 2 AZs for subnet group)
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref RdsVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-public-subnet-2-${Environment}
+
+  # Private Subnet 1 (for RDS)
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref RdsVPC
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-private-subnet-1-${Environment}
+
+  # Private Subnet 2 (for RDS - required for subnet group)
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref RdsVPC
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-private-subnet-2-${Environment}
+
+  # Public Route Table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref RdsVPC
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-public-rt-${Environment}
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # NAT Gateway (for Lambda -> RDS connectivity)
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-nat-${Environment}
+
+  # Private Route Table
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref RdsVPC
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-private-rt-${Environment}
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # Security Group for RDS
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS PostgreSQL
+      VpcId: !Ref RdsVPC
+      SecurityGroupIngress:
+        # Allow PostgreSQL from Lambda security group
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-rds-sg-${Environment}
+
+  # Security Group for Lambda
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda functions
+      VpcId: !Ref RdsVPC
+      SecurityGroupEgress:
+        # Allow all outbound (for internet + RDS)
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-lambda-sg-${Environment}
+
+  # DB Subnet Group (requires 2+ subnets in different AZs)
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub pick6-db-subnet-group-${Environment}
+      DBSubnetGroupDescription: Subnet group for Pick6 RDS
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-db-subnet-group-${Environment}
+
+  # RDS PostgreSQL Instance
+  PostgresDB:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub pick6-postgres-${Environment}
+      DBName: !Ref DBName
+      Engine: postgres
+      EngineVersion: '15.4'
+      # db.t4g.micro - cheapest option (~$13/month, free tier eligible)
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: 20  # Free tier: 20GB
+      StorageType: gp3
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Ref DBMasterPassword
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      # Single-AZ for cost savings
+      MultiAZ: !If [IsProduction, true, false]
+      # Backups
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      # Performance insights (free for 7 days retention)
+      EnablePerformanceInsights: false
+      # Encryption at rest
+      StorageEncrypted: true
+      # Auto minor version upgrades
+      AutoMinorVersionUpgrade: true
+      # Enhanced monitoring (costs $1.50/month per instance - disable for cheapest)
+      MonitoringInterval: 0
+      Tags:
+        - Key: Name
+          Value: !Sub pick6-postgres-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Store DB credentials in Parameter Store
+  DBUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /pick6/${Environment}/database-url
+      Type: SecureString
+      Value: !Sub 
+        - 'postgresql://${Username}:${Password}@${Endpoint}/${DBName}'
+        - Username: !Ref DBMasterUsername
+          Password: !Ref DBMasterPassword
+          Endpoint: !GetAtt PostgresDB.Endpoint.Address
+          DBName: !Ref DBName
+      Description: !Sub Database URL for Pick6 ${Environment}
+
+  DBHostParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /pick6/${Environment}/database-host
+      Type: String
+      Value: !GetAtt PostgresDB.Endpoint.Address
+      Description: !Sub Database host for Pick6 ${Environment}
+
+  DBPortParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /pick6/${Environment}/database-port
+      Type: String
+      Value: !GetAtt PostgresDB.Endpoint.Port
+      Description: !Sub Database port for Pick6 ${Environment}
+
+Outputs:
+  VpcId:
+    Description: VPC ID for Lambda functions
+    Value: !Ref RdsVPC
+    Export:
+      Name: !Sub ${AWS::StackName}-VpcId
+
+  LambdaSecurityGroupId:
+    Description: Security Group ID for Lambda functions
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaSG
+
+  PrivateSubnetIds:
+    Description: Private subnet IDs for Lambda functions (comma-separated)
+    Value: !Sub '${PrivateSubnet1},${PrivateSubnet2}'
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateSubnets
+
+  DatabaseEndpoint:
+    Description: RDS Database endpoint
+    Value: !GetAtt PostgresDB.Endpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-DBEndpoint
+
+  DatabasePort:
+    Description: RDS Database port
+    Value: !GetAtt PostgresDB.Endpoint.Port
+
+  DatabaseName:
+    Description: Database name
+    Value: !Ref DBName
+
+  DatabaseURL:
+    Description: Full database connection URL (check Parameter Store for actual password)
+    Value: !Sub 
+      - 'postgresql://${Username}:****@${Endpoint}/${DBName}'
+      - Username: !Ref DBMasterUsername
+        Endpoint: !GetAtt PostgresDB.Endpoint.Address
+        DBName: !Ref DBName
+
+  ConnectionCommand:
+    Description: Command to connect to the database
+    Value: !Sub 
+      - 'psql "postgresql://${Username}:${Password}@${Endpoint}/${DBName}"'
+      - Username: !Ref DBMasterUsername
+        Password: !Ref DBMasterPassword
+        Endpoint: !GetAtt PostgresDB.Endpoint.Address
+        DBName: !Ref DBName
+
+  EstimatedMonthlyCost:
+    Description: Estimated monthly cost
+    Value: 'db.t4g.micro + 20GB gp3 + Single-AZ ≈ $13-15/month (FREE for 12 months with free tier)'

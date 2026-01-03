@@ -7,17 +7,16 @@ import sys
 import os
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, League, LeagueTeam, LeagueTeamSchoolAssignment, User, School
-from responses import success_response, error_response, validation_error_response, not_found_response
-from auth import require_auth, get_user_id_from_event
+from shared.database import get_db_session, League, LeagueTeam, LeagueTeamSchoolAssignment, User, School
+from shared.responses import success_response, error_response, validation_error_response, not_found_response
+from shared.auth import require_auth, get_user_id_from_event
 
 @require_auth
 def lambda_handler(event, context):
     """Get league settings and member list - only league creator can access"""
     try:
         # Parse the league ID from path
-        league_id = event.get('pathParameters', {}).get('id')
+        league_id = event.get('pathParameters', {}).get('league_id')
         if not league_id:
             return validation_error_response({'id': 'League ID is required'})
         
@@ -73,6 +72,9 @@ def lambda_handler(event, context):
                         'draftPickOverall': assignment.draft_pick_overall
                     })
                 
+                # Check if this is a manual team (dummy user)
+                is_manual_team = user.email.endswith('@cfbpick6.internal')
+                
                 members.append({
                     'userId': str(user.id),
                     'displayName': user.display_name,
@@ -81,7 +83,8 @@ def lambda_handler(event, context):
                     'joinedAt': league_team.joined_at.isoformat(),
                     'pickCount': len(teams),
                     'teams': teams,  # Add the actual teams
-                    'isCreator': user.id == league.created_by
+                    'isCreator': user.id == league.created_by,
+                    'isManualTeam': is_manual_team  # Flag to identify manual teams
                 })
             
             # Count total picks made

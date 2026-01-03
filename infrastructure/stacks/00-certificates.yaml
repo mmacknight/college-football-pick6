@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Pick6 College Football - SSL Certificates (MUST be deployed to us-east-1)
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: cfbpick6.com
+    Description: Your domain name
+  
+  HostedZoneId:
+    Type: String
+    Default: Z02999291RLQ564DKGT1U
+    Description: Existing Route 53 Hosted Zone ID for cfbpick6.com
+
+Metadata:
+  Tags:
+    Project: Pick6-CollegeFootball
+    Version: "2025"
+    Environment: shared
+    ManagedBy: CloudFormation
+    Repository: https://github.com/mmacknight/college-football-pick6
+    CostCenter: Pick6-Infrastructure
+
+Resources:
+  # SSL Certificate for API subdomains (must be in us-east-1)
+  ApiSSLCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub "api.${DomainName}"
+      SubjectAlternativeNames:
+        - !Sub "dev-api.${DomainName}"
+        - !Sub "*.api.${DomainName}"  # Additional wildcard for api subdomains
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Sub "api.${DomainName}"
+          HostedZoneId: !Ref HostedZoneId
+        - DomainName: !Sub "dev-api.${DomainName}"
+          HostedZoneId: !Ref HostedZoneId
+        - DomainName: !Sub "*.api.${DomainName}"
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Project
+          Value: Pick6-CollegeFootball
+        - Key: Version
+          Value: "2025"
+        - Key: Environment
+          Value: shared
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Repository
+          Value: https://github.com/mmacknight/college-football-pick6
+        - Key: CostCenter
+          Value: Pick6-Infrastructure
+
+  # Use existing Route 53 Hosted Zone
+  # Note: Using existing hosted zone Z02999291RLQ564DKGT1U for cfbpick6.com
+
+Outputs:
+  ApiCertificateArn:
+    Description: SSL Certificate ARN for API endpoints
+    Value: !Ref ApiSSLCertificate
+    Export:
+      Name: "Pick6-ApiCertificateArn"
+  
+  HostedZoneId:
+    Description: Route 53 Hosted Zone ID (existing)
+    Value: !Ref HostedZoneId
+    Export:
+      Name: "Pick6-HostedZoneId"

@@ -5,6 +5,10 @@ backend/local-env.json
 .env.local
 .env.production
 
+# CloudFormation parameter files with secrets
+infrastructure/prod-parameters.json
+infrastructure/*-secrets.json
+
 # API Keys and secrets
 **/api-keys.json
 **/secrets.json

@@ -9,7 +9,12 @@ from datetime import datetime
 # Database URL - switches between local and AWS
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://pick6admin:pick6password@localhost:5432/pick6db')
 
-engine = create_engine(DATABASE_URL)
+import ssl
+# Clean URL and configure SSL separately for pg8000
+clean_url = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://').split('?')[0]
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False  # Neon uses different hostname in cert
+engine = create_engine(clean_url, connect_args={"ssl_context": ssl_context})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

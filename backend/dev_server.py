@@ -22,6 +22,7 @@ except ImportError:
     print("💡 WebSocket libraries not installed. Install with: pip install flask-socketio")
 
 # Add shared modules to path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'layers', 'shared', 'python'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'lambdas', 'shared'))
 
 # Import lambda handlers with explicit paths
@@ -55,6 +56,7 @@ draft_status_handler = load_lambda_handler(os.path.join(os.path.dirname(__file__
 # New games week handler
 games_week_handler = load_lambda_handler(os.path.join(os.path.dirname(__file__), 'lambdas', 'leagues', 'games_week.py'))
 start_draft_handler = load_lambda_handler(os.path.join(os.path.dirname(__file__), 'lambdas', 'leagues', 'start_draft.py'))
+skip_draft_handler = load_lambda_handler(os.path.join(os.path.dirname(__file__), 'lambdas', 'leagues', 'skip_draft.py'))
 
 # League admin handlers
 get_settings_handler = load_lambda_handler(os.path.join(os.path.dirname(__file__), 'lambdas', 'leagues', 'get_settings.py'))
@@ -182,21 +184,21 @@ def join_league():
 @app.route('/leagues/<league_id>/my-teams', methods=['GET'])
 def get_my_teams(league_id):
     event = flask_to_lambda_event('GET', f'/leagues/{league_id}/my-teams', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = my_teams_handler(event, {})
     return lambda_to_flask_response(response)
 
 @app.route('/leagues/<league_id>/draft-board', methods=['GET'])
 def get_draft_board(league_id):
     event = flask_to_lambda_event('GET', f'/leagues/{league_id}/draft-board', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = draft_board_handler(event, {})
     return lambda_to_flask_response(response)
 
 @app.route('/leagues/<league_id>/draft-status', methods=['GET'])
 def get_draft_status(league_id):
     event = flask_to_lambda_event('GET', f'/leagues/{league_id}/draft-status', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = draft_status_handler(event, {})
     return lambda_to_flask_response(response)
 
@@ -218,7 +220,7 @@ def get_league_games_week(league_id, week):
 @app.route('/leagues/<league_id>/settings', methods=['GET'])
 def get_league_settings(league_id):
     event = flask_to_lambda_event('GET', f'/leagues/{league_id}/settings', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = get_settings_handler(event, {})
     return lambda_to_flask_response(response)
 
@@ -226,7 +228,7 @@ def get_league_settings(league_id):
 def update_league_settings(league_id):
     event = flask_to_lambda_event('PUT', f'/leagues/{league_id}/settings', 
                                   request.get_json(), 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     if event['body'] and isinstance(event['body'], dict):
         event['body'] = json.dumps(event['body'])
     response = update_settings_handler(event, {})
@@ -235,14 +237,14 @@ def update_league_settings(league_id):
 @app.route('/leagues/<league_id>/players/<user_id>', methods=['DELETE'])
 def remove_player_from_league(league_id, user_id):
     event = flask_to_lambda_event('DELETE', f'/leagues/{league_id}/players/{user_id}', 
-                                  path_params={'id': league_id, 'userId': user_id})
+                                  path_params={'league_id': league_id, 'userId': user_id})
     response = remove_player_handler(event, {})
     return lambda_to_flask_response(response)
 
 @app.route('/leagues/<league_id>/reset-draft', methods=['POST'])
 def reset_league_draft(league_id):
     event = flask_to_lambda_event('POST', f'/leagues/{league_id}/reset-draft', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = reset_draft_handler(event, {})
     return lambda_to_flask_response(response)
 
@@ -250,7 +252,7 @@ def reset_league_draft(league_id):
 def update_player_teams(league_id, user_id):
     event = flask_to_lambda_event('PUT', f'/leagues/{league_id}/players/{user_id}/teams', 
                                   request.get_json(), 
-                                  path_params={'id': league_id, 'userId': user_id})
+                                  path_params={'league_id': league_id, 'userId': user_id})
     if event['body'] and isinstance(event['body'], dict):
         event['body'] = json.dumps(event['body'])
     response = update_player_teams_handler(event, {})
@@ -260,7 +262,7 @@ def update_player_teams(league_id, user_id):
 def update_team_name(league_id):
     event = flask_to_lambda_event('PUT', f'/leagues/{league_id}/team-name', 
                                   request.get_json(), 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     if event['body'] and isinstance(event['body'], dict):
         event['body'] = json.dumps(event['body'])
     response = update_team_name_handler(event, {})
@@ -269,14 +271,21 @@ def update_team_name(league_id):
 @app.route('/leagues/<league_id>/start-draft', methods=['POST'])
 def start_league_draft(league_id):
     event = flask_to_lambda_event('POST', f'/leagues/{league_id}/start-draft', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = start_draft_handler(event, {})
+    return lambda_to_flask_response(response)
+
+@app.route('/leagues/<league_id>/skip-draft', methods=['POST'])
+def skip_league_draft(league_id):
+    event = flask_to_lambda_event('POST', f'/leagues/{league_id}/skip-draft', 
+                                  path_params={'league_id': league_id})
+    response = skip_draft_handler(event, {})
     return lambda_to_flask_response(response)
 
 @app.route('/leagues/<league_id>/lobby', methods=['GET'])
 def get_league_lobby(league_id):
     event = flask_to_lambda_event('GET', f'/leagues/{league_id}/lobby', 
-                                  path_params={'id': league_id})
+                                  path_params={'league_id': league_id})
     response = lobby_handler(event, {})
     return lambda_to_flask_response(response)
 

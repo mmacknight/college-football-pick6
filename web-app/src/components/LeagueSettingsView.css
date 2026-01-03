@@ -208,6 +208,13 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+.form-hint {
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+  margin-top: -2px;
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
@@ -624,6 +631,13 @@
   line-height: 1.4;
 }
 
+.draft-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .start-draft-button {
   background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
@@ -634,7 +648,6 @@
   font-size: 16px;
   font-weight: 600;
   transition: all 0.2s ease;
-  align-self: flex-start;
   box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
 }
 
@@ -645,6 +658,32 @@
 }
 
 .start-draft-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.skip-draft-button {
+  background: linear-gradient(135deg, #fd7e14, #e55a2d);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(253, 126, 20, 0.2);
+}
+
+.skip-draft-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e55a2d, #dc3545);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(253, 126, 20, 0.3);
+}
+
+.skip-draft-button:disabled {
   background: #6c757d;
   cursor: not-allowed;
   transform: none;
@@ -765,4 +804,89 @@
   .form-actions {
     flex-direction: column;
   }
+}
+
+/* Manual Team Addition Styles */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.add-team-button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-team-button:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.add-team-form {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.add-team-form h4 {
+  margin: 0 0 0.5rem 0;
+  color: #343a40;
+  font-size: 18px;
+}
+
+.form-description {
+  margin: 0 0 1.5rem 0;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+.manual-badge {
+  background: #17a2b8;
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.creator-badge {
+  background: #ffc107;
+  color: #212529;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  margin-left: 8px;
 }

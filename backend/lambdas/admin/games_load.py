@@ -8,45 +8,68 @@ from typing import List, Dict
 # Add shared modules to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'shared'))
 
-from database import get_db_session, Game, School
-from responses import success_response, error_response
+from shared.database import get_db_session, Game, School
+from shared.responses import success_response, error_response
+from shared.parameter_store import get_cfb_api_key
+from shared.week_utils import get_all_api_week_params_for_season
+from shared.game_utils import process_api_game, validate_game_teams, create_new_game, update_existing_game
 from sqlalchemy import text
 
 # CollegeFootballData API configuration
 CFB_API_BASE = "https://api.collegefootballdata.com"
-CFB_API_KEY = os.getenv('CFB_API_KEY')
 
-def fetch_games_from_api(year: str = "2024") -> List[Dict]:
-    """Fetch all FBS games for a season from CollegeFootballData API"""
-    if not CFB_API_KEY:
-        raise Exception("CFB_API_KEY environment variable not set")
+def fetch_games_from_api(year: str = "2024", from_week: int = 1) -> List[Dict]:
+    """Fetch FBS games for a season from CollegeFootballData API
     
-    headers = {'Authorization': f'Bearer {CFB_API_KEY}'}
+    Uses shared week mapping from week_utils.get_all_api_week_params_for_season()
+    to ensure consistent week numbering across all game loaders.
+    
+    Note: The API uses SEPARATE week numbering for regular vs postseason:
+    - Regular season: weeks 1-14 (seasonType=regular)
+    - Week 15: Conference Championships (API regular weeks 15-16)
+    - Weeks 16-21: Bowl/CFP (API postseason weeks 1-6)
+    """
+    cfb_api_key = get_cfb_api_key()
+    if not cfb_api_key:
+        raise Exception("CFB_API_KEY not available in Parameter Store")
+    
+    headers = {'Authorization': f'Bearer {cfb_api_key}'}
     all_games = []
     
     try:
-        # Get games for all weeks of the season (regular season: weeks 1-15, postseason: weeks 16-17)
-        for week in range(1, 18):  # Weeks 1-17 to cover regular + postseason
-            print(f"Fetching games for {year} week {week}...")
+        print(f"Fetching games from week {from_week} onward...")
+        
+        # Use shared week mapping for consistency
+        week_params = get_all_api_week_params_for_season()
+        
+        for internal_week, api_week, season_type in week_params:
+            # Skip weeks before from_week
+            if internal_week < from_week:
+                continue
+            
+            print(f"Fetching {season_type} games for {year} (API week {api_week} -> our week {internal_week})...")
             
             response = requests.get(
                 f"{CFB_API_BASE}/games",
                 headers=headers,
                 params={
                     'year': year,
-                    'week': week,
-                    'seasonType': 'regular' if week <= 15 else 'postseason',
-                    'division': 'fbs'  # Only FBS games
+                    'week': api_week,
+                    'seasonType': season_type,
+                    'division': 'fbs'
                 }
             )
             response.raise_for_status()
             games = response.json()
             
             if games:
+                # Set our internal week number on each game
+                for game in games:
+                    game['week'] = internal_week
                 all_games.extend(games)
-                print(f"  Found {len(games)} games for week {week}")
+                print(f"  Found {len(games)} games")
             else:
-                print(f"  No games found for week {week}")
+                print(f"  No games found")
         
         print(f"Total games fetched for {year}: {len(all_games)}")
         return all_games
@@ -55,169 +78,93 @@ def fetch_games_from_api(year: str = "2024") -> List[Dict]:
         print(f"Error fetching games from API: {str(e)}")
         raise
 
-def normalize_team_name(team_name: str) -> str:
-    """Convert API team name to our normalized school ID"""
-    if not team_name:
-        return None
-    
-    # Use same normalization logic as season_init
-    name = team_name.lower()
-    name = name.replace(' university', '')
-    name = name.replace(' state university', ' state')
-    name = name.replace(' college', '')
-    name = name.replace('university of ', '')
-    name = name.replace(' ', '')
-    name = name.replace('-', '')
-    name = name.replace('.', '')
-    
-    # Handle special cases
-    special_cases = {
-        'ohiostate': 'ohiostate',
-        'notredame': 'notredame',
-        'texasam': 'texasam',
-        'floridastate': 'floridastate',
-        'virginiatech': 'virginiatech',
-        'northcarolina': 'northcarolina',
-        'southernmethodist': 'smu',
-        'texaschristian': 'tcu',
-        'brighamyoung': 'byu',
-        'texasam': 'texasa&m'  # API has "Texas A&M"
-    }
-    
-    return special_cases.get(name, name)
-
 def lambda_handler(event, context):
-    """Load all games for specified seasons"""
+    """Load all games for specified seasons
+    
+    Uses shared game processing functions for consistency with scheduled loader.
+    """
     try:
         # Parse request body
         body = json.loads(event.get('body', '{}')) if event.get('body') else {}
         seasons = body.get('seasons', ['2024', '2025'])
+        delete_from_week = body.get('delete_from_week')  # Optional: delete games from this week onward first
+        skip_existing = body.get('skip_existing', True)  # If False, update existing games instead of skipping
+        from_week = body.get('from_week', 1)  # Optional: only load games from this week onward
         
         if isinstance(seasons, str):
             seasons = [seasons]
         
         print(f"Loading games for seasons: {seasons}")
+        print(f"From week: {from_week}")
+        print(f"Skip existing: {skip_existing} (set skip_existing=false to update existing games)")
         
         total_games_added = 0
+        total_games_updated = 0
         total_games_skipped = 0
+        total_games_deleted = 0
         
         # Database operations
         db = get_db_session()
         try:
+            # Delete games from specified week onward if requested
+            if delete_from_week:
+                for season in seasons:
+                    delete_query = text("""
+                        DELETE FROM games 
+                        WHERE season = :season AND week >= :week
+                    """)
+                    result = db.execute(delete_query, {'season': int(season), 'week': int(delete_from_week)})
+                    deleted = result.rowcount
+                    total_games_deleted += deleted
+                    print(f"🗑️ Deleted {deleted} games from {season} season week {delete_from_week}+")
+                db.commit()
+            
             for season in seasons:
                 print(f"\n🏈 Loading games for {season} season...")
                 
                 # Fetch games from API
-                api_games = fetch_games_from_api(season)
+                api_games = fetch_games_from_api(season, from_week)
                 
                 if not api_games:
                     print(f"No games found for {season}")
                     continue
                 
                 games_added = 0
+                games_updated = 0
                 games_skipped = 0
                 
                 for game in api_games:
-                    try:
-                        # Get team IDs directly from the API
-                        home_team_id = game.get('homeId')
-                        away_team_id = game.get('awayId')
-                        
-                        # Skip if we don't have team IDs
-                        if not home_team_id or not away_team_id:
-                            if games_skipped < 5:  # Only show first few for debugging
-                                print(f"Debug: Missing team IDs - Home: {home_team_id}, Away: {away_team_id}")
-                            games_skipped += 1
-                            continue
-                        
-                        # Check if teams exist in our schools table
-                        home_school = db.query(School).filter(School.id == home_team_id).first()
-                        away_school = db.query(School).filter(School.id == away_team_id).first()
-                        
-                        if not home_school or not away_school:
-                            if games_skipped < 5:  # Only show first few for debugging
-                                print(f"Debug: Teams not in database - Home ID: {home_team_id} ({'found' if home_school else 'NOT FOUND'}), Away ID: {away_team_id} ({'found' if away_school else 'NOT FOUND'})")
-                            games_skipped += 1
-                            continue
-                        
-                        # Check if game already exists
-                        existing_game = db.query(Game).filter(
-                            Game.id == game.get('id')
-                        ).first()
-                        
-                        if existing_game:
-                            games_skipped += 1
-                            continue
-                        
-                        # Parse game time
-                        start_date = None
-                        if game.get('startDate'):
-                            try:
-                                start_date = datetime.fromisoformat(game['startDate'].replace('Z', '+00:00'))
-                            except ValueError:
-                                pass
-                        
-                        # Create game record with all API fields
-                        new_game = Game(
-                            id=game.get('id'),
-                            season=game.get('season'),
-                            week=game.get('week'),
-                            season_type=game.get('seasonType', 'regular'),
-                            start_date=start_date,
-                            start_time_tbd=game.get('startTimeTBD', False),
-                            completed=game.get('completed', False),
-                            neutral_site=game.get('neutralSite', False),
-                            conference_game=game.get('conferenceGame', False),
-                            attendance=game.get('attendance'),
-                            venue_id=game.get('venueId'),
-                            venue=game.get('venue'),
-                            home_id=home_team_id,
-                            home_team=game.get('homeTeam'),
-                            home_classification=game.get('homeClassification'),
-                            home_conference=game.get('homeConference'),
-                            home_points=game.get('homePoints', 0),
-                            home_line_scores=game.get('homeLineScores', []),
-                            home_postgame_win_probability=game.get('homePostgameWinProbability'),
-                            home_pregame_elo=game.get('homePregameElo'),
-                            home_postgame_elo=game.get('homePostgameElo'),
-                            away_id=away_team_id,
-                            away_team=game.get('awayTeam'),
-                            away_classification=game.get('awayClassification'),
-                            away_conference=game.get('awayConference'),
-                            away_points=game.get('awayPoints', 0),
-                            away_line_scores=game.get('awayLineScores', []),
-                            away_postgame_win_probability=game.get('awayPostgameWinProbability'),
-                            away_pregame_elo=game.get('awayPregameElo'),
-                            away_postgame_elo=game.get('awayPostgameElo'),
-                            excitement_index=game.get('excitementIndex'),
-                            highlights=game.get('highlights'),
-                            notes=game.get('notes')
-                        )
-                        
-                        db.add(new_game)
+                    # Use shared game processing function
+                    # Note: game already has 'week' set to internal week by fetch_games_from_api
+                    result = process_api_game(db, game, internal_week=game.get('week'), skip_existing=skip_existing)
+                    
+                    if result == 'added':
                         games_added += 1
-                        
-                        if games_added % 100 == 0:
-                            print(f"  Added {games_added} games so far...")
-                        
-                    except Exception as e:
-                        print(f"Error adding game {game.get('id', 'Unknown')}: {str(e)}")
+                    elif result == 'updated':
+                        games_updated += 1
+                    else:
                         games_skipped += 1
-                        continue
+                    
+                    if (games_added + games_updated) % 100 == 0 and (games_added + games_updated) > 0:
+                        print(f"  Processed {games_added + games_updated} games so far...")
                 
                 # Commit games for this season
                 db.commit()
                 
                 print(f"✅ {season} season complete!")
                 print(f"   Games added: {games_added}")
+                print(f"   Games updated: {games_updated}")
                 print(f"   Games skipped: {games_skipped}")
                 
                 total_games_added += games_added
+                total_games_updated += games_updated
                 total_games_skipped += games_skipped
             
             return success_response({
                 'seasons': seasons,
+                'total_games_deleted': total_games_deleted,
                 'total_games_added': total_games_added,
+                'total_games_updated': total_games_updated,
                 'total_games_skipped': total_games_skipped,
                 'message': f'Successfully loaded games for {len(seasons)} seasons'
             })

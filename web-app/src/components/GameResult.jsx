@@ -1,8 +1,40 @@
 import React from 'react';
 import './GameResult.css';
 
+// Helper function to format game time to local timezone
+const formatGameTime = (dateString) => {
+  if (!dateString || dateString === 'TBD' || dateString === 'Scheduled') {
+    return dateString || 'Scheduled';
+  }
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+    
+    // Format: "Sat 3:30 PM ET" or similar based on user's timezone
+    const options = {
+      weekday: 'short',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    };
+    
+    return date.toLocaleString('en-US', options);
+  } catch (error) {
+    console.error('Error formatting game time:', error);
+    return dateString;
+  }
+};
+
 const GameResult = ({ team, compact = false }) => {
-  if (!team.game) {
+  // Handle both single game (team.game) and games array (team.games)
+  const games = team.games || (team.game ? [team.game] : []);
+  
+  if (!games || games.length === 0) {
     return (
       <div className={`game-result no-game ${compact ? 'compact' : ''}`}>
         <div className="game-basic-info">
@@ -27,7 +59,35 @@ const GameResult = ({ team, compact = false }) => {
     );
   }
 
-  const { game } = team;
+  // If only one game, render normally
+  if (games.length === 1) {
+    return (
+      <SingleGameResult 
+        team={team} 
+        game={games[0]} 
+        compact={compact}
+        isMultiple={false}
+      />
+    );
+  }
+
+  // Multiple games (e.g., CFP teams with playoff games)
+  return (
+    <div className="multiple-games-container">
+      {games.map((game, index) => (
+        <SingleGameResult 
+          key={`${team.id}-game-${index}`}
+          team={team} 
+          game={game} 
+          compact={compact}
+          isMultiple={true}
+        />
+      ))}
+    </div>
+  );
+};
+
+const SingleGameResult = ({ team, game, compact, isMultiple }) => {
   const isLive = game.status === 'in_progress';
   const isCompleted = game.status === 'completed';
   const isScheduled = game.status === 'scheduled';
@@ -68,7 +128,7 @@ const GameResult = ({ team, compact = false }) => {
   const showScoreBug = (isLive || isCompleted) && game.score !== 'TBD';
 
   return (
-    <div className={`game-result ${resultClass} ${compact ? 'compact' : ''}`}>
+    <div className={`game-result ${resultClass} ${compact ? 'compact' : ''} ${isMultiple ? 'multiple' : ''}`}>
       <div className="game-basic-info">
         {!compact && (
           <>
@@ -83,6 +143,9 @@ const GameResult = ({ team, compact = false }) => {
         )}
         <span className="vs-text">{game.isHome ? 'vs' : '@'}</span>
         <span className="opponent-name">{game.opponent}</span>
+        {isMultiple && game.round && (
+          <span className="game-round">{game.round}</span>
+        )}
       </div>
       
       {showScoreBug ? (
@@ -102,7 +165,7 @@ const GameResult = ({ team, compact = false }) => {
       ) : (
         <div className="game-status-info">
           <span className="game-time">
-            {isScheduled ? (game.date || 'Scheduled') : game.status}
+            {isScheduled ? formatGameTime(game.startDate || game.date) : game.status}
           </span>
           <span className="home-away-indicator">
             {game.isHome ? 'HOME' : 'AWAY'}

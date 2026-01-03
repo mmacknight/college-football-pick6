@@ -3,10 +3,9 @@ import sys
 import os
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, User
-from responses import success_response, error_response, validation_error_response
-from auth import verify_password, create_jwt_token
+from shared.database import get_db_session, User
+from shared.responses import success_response, error_response, validation_error_response
+from shared.auth import verify_password, create_jwt_token
 
 def lambda_handler(event, context):
     """Handle user login"""

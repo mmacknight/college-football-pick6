@@ -3,10 +3,9 @@ import sys
 import os
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, League, LeagueTeam, LeagueTeamSchoolAssignment, School, User, LeagueDraft
-from responses import success_response, error_response, validation_error_response, not_found_response
-from auth import require_auth, get_user_id_from_event
+from shared.database import get_db_session, League, LeagueTeam, LeagueTeamSchoolAssignment, School, User, LeagueDraft
+from shared.responses import success_response, error_response, validation_error_response, not_found_response
+from shared.auth import require_auth, get_user_id_from_event
 from sqlalchemy import and_, text
 
 @require_auth

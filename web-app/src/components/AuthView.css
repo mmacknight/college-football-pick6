@@ -124,6 +124,22 @@
   gap: 1.5rem;
 }
 
+.view-code-intro {
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.view-code-intro p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 0.875rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

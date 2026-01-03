@@ -1,12 +1,22 @@
-const API_BASE_URL = 'http://127.0.0.1:3001';
+import config from '../config/config.js';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 class APIService {
   constructor() {
     this.token = localStorage.getItem('pick6_token');
   }
 
+  // Refresh token from localStorage (useful when user logs in/out)
+  refreshToken() {
+    this.token = localStorage.getItem('pick6_token');
+  }
+
   // Helper method to make authenticated requests
   async makeRequest(endpoint, options = {}) {
+    // Refresh token from localStorage to handle login state changes
+    this.token = localStorage.getItem('pick6_token');
+    
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = {
       'Content-Type': 'application/json',
@@ -116,6 +126,23 @@ class APIService {
     });
   }
 
+  async viewLeagueByCode(joinCode) {
+    // Public endpoint - no auth required
+    const url = `${API_BASE_URL}/leagues/view/${joinCode}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorData = data.error || {};
+      throw new APIError(
+        errorData.message || `HTTP ${response.status}`,
+        this.getErrorType(response.status)
+      );
+    }
+
+    return data.data;
+  }
+
   // Standings
   async fetchLeagueStandings(leagueId) {
     return await this.makeRequest(`/leagues/${leagueId}/standings`);
@@ -195,8 +222,21 @@ class APIService {
     });
   }
 
+  async addManualTeam(leagueId, playerName, teamName) {
+    return await this.makeRequest(`/leagues/${leagueId}/manual-teams`, {
+      method: 'POST',
+      body: JSON.stringify({ playerName, teamName })
+    });
+  }
+
   async startLeagueDraft(leagueId) {
     return await this.makeRequest(`/leagues/${leagueId}/start-draft`, {
+      method: 'POST'
+    });
+  }
+
+  async skipDraftActivateLeague(leagueId) {
+    return await this.makeRequest(`/leagues/${leagueId}/skip-draft`, {
       method: 'POST'
     });
   }

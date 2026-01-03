@@ -96,7 +96,12 @@ function AuthRoute() {
     }
   }, [user, navigate]);
 
-  return <AuthView onLogin={handleLogin} />;
+  const handleViewLeague = (leagueId) => {
+    // Navigate to standings page
+    navigate(`/leagues/${leagueId}/standings`);
+  };
+
+  return <AuthView onLogin={handleLogin} onViewLeague={handleViewLeague} />;
 }
 
 // Leagues route component
@@ -116,7 +121,13 @@ function LeaguesRoute() {
       return;
     }
     
-    // For active/completed leagues, check if user needs to draft teams
+    // For active/completed leagues, go to standings first
+    if (league.status === 'active' || league.status === 'completed') {
+      navigate(`/leagues/${league.id}/standings`);
+      return;
+    }
+    
+    // For any other status, check if user needs to draft teams
     try {
       const leagueStandings = await apiService.fetchLeagueStandings(league.id);
       const userEntry = leagueStandings.members?.find(member => member.displayName === user.displayName);
@@ -425,11 +436,21 @@ function StandingsRoute() {
   }, [leagueId, user]);
 
   const handleBackToLeagues = () => {
-    navigate('/leagues');
+    // If user is not authenticated, redirect to auth page
+    if (!user) {
+      navigate('/auth');
+    } else {
+      navigate('/leagues');
+    }
   };
 
   const handleLeagueSettings = (league) => {
-    navigate(`/leagues/${league.id}/settings`);
+    // Only allow settings access for authenticated users
+    if (!user) {
+      navigate('/auth');
+    } else {
+      navigate(`/leagues/${league.id}/settings`);
+    }
   };
 
   if (!league) return <div>Loading...</div>;
@@ -506,6 +527,17 @@ function LobbyRoute() {
     }
   };
 
+  const handleSkipDraft = async () => {
+    try {
+      await apiService.skipDraftActivateLeague(leagueId);
+      // Navigate to league settings after activation
+      navigate(`/leagues/${leagueId}/settings`);
+    } catch (err) {
+      console.error('Failed to activate league:', err);
+      // Could show error message here
+    }
+  };
+
   const handleLeagueSettings = () => {
     navigate(`/leagues/${leagueId}/settings`);
   };
@@ -516,6 +548,7 @@ function LobbyRoute() {
       user={user}
       onBack={handleBack}
       onStartDraft={handleStartDraft}
+      onSkipDraft={handleSkipDraft}
       onLeagueSettings={handleLeagueSettings}
       onUserUpdate={handleUserUpdate}
       onLogout={handleLogout}
@@ -540,11 +573,7 @@ function App() {
               <DraftRoute />
             </ProtectedRoute>
           } />
-          <Route path="/leagues/:leagueId/standings" element={
-            <ProtectedRoute>
-              <StandingsRoute />
-            </ProtectedRoute>
-          } />
+          <Route path="/leagues/:leagueId/standings" element={<StandingsRoute />} />
           <Route path="/leagues/:leagueId/lobby" element={
             <ProtectedRoute>
               <LobbyRoute />

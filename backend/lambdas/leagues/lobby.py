@@ -3,17 +3,16 @@ import sys
 import os
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, League, LeagueTeam, User
-from responses import success_response, error_response, not_found_response
-from auth import require_auth, get_user_id_from_event
+from shared.database import get_db_session, League, LeagueTeam, User
+from shared.responses import success_response, error_response, not_found_response
+from shared.auth import require_auth, get_user_id_from_event
 from sqlalchemy import and_
 
 @require_auth
 def lambda_handler(event, context):
     """Get league lobby information (accessible to all league members)"""
     try:
-        league_id = event['pathParameters']['id']
+        league_id = event['pathParameters']['league_id']
         user_id = get_user_id_from_event(event)
         
         db = get_db_session()

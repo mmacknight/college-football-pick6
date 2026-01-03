@@ -3,17 +3,16 @@ import sys
 import os
 
 # Import from layer
-sys.path.append('/opt/python/python')
-from database import get_db_session, League, LeagueTeam, LeagueTeamSchoolAssignment, School, User
-from responses import success_response, error_response, validation_error_response, not_found_response
-from auth import require_auth, get_user_id_from_event
+from shared.database import get_db_session, League, LeagueTeam, LeagueTeamSchoolAssignment, School, User
+from shared.responses import success_response, error_response, validation_error_response, not_found_response
+from shared.auth import require_auth, get_user_id_from_event
 
 @require_auth
 def lambda_handler(event, context):
     """Get the complete draft board (all picks) for a league"""
     try:
         # Get league ID from path parameters
-        league_id = event.get('pathParameters', {}).get('id')
+        league_id = event.get('pathParameters', {}).get('league_id')
         if not league_id:
             return validation_error_response({'id': 'League ID is required'})
         
